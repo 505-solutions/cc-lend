@@ -5,6 +5,8 @@ coverage.json
 typechain
 typechain-types
 
+@nomicfoundation
+
 # Hardhat files
 cache
 artifacts
