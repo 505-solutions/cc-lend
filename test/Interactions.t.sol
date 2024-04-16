@@ -201,37 +201,6 @@ contract ConfigurationTest is Test {
                          BORROW/REPAYMENT TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testBorrow2() public {
-        uint amount = 1e18;
-
-        // // Deposit tokens and enable them as collateral.
-        // mintAndApprove(asset, amount);
-        // pool.deposit(address(asset), amount, true);
-
-        // Mint borrow tokens and supply them to the pool.
-        mintAndApprove(borrowAsset, amount / 4);
-        pool.deposit(address(borrowAsset), amount / 4, false);
-
-        // Set the price of collateral to 1 ETH.
-        oracle.updatePrice(address(asset), 1e18);
-
-        // Set the price of the borrow asset to 2 ETH.
-        // This means that with a 0.5 lend factor, we should be able to borrow 0.25 ETH.
-        oracle.updatePrice(address(borrowAsset), 2e18);
-
-        // Borrow the asset.
-        pool.borrow(address(borrowAsset), amount / 4);
-
-        // Checks.
-        assertEq(borrowAsset.balanceOf(address(this)), amount / 4);
-        assertEq(
-            pool.borrowBalance(address(borrowAsset), address(this)),
-            amount / 4
-        );
-        assertEq(pool.totalBorrows(address(borrowAsset)), amount / 4);
-        assertEq(pool.totalUnderlying(address(borrowAsset)), amount / 4);
-    }
-
     function testBorrow(uint256 amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e27);
 

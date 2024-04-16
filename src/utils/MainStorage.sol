@@ -5,13 +5,8 @@ abstract contract MainStorage {
     /*///////////////////////////////////////////////////////////////
                           ACCESS CONTROLS
     //////////////////////////////////////////////////////////////*/
-    address public immutable s_owner;
-    address public immutable s_messageRelay;
+    address immutable s_messageRelay;
 
-    modifier onlyOwner() {
-        require(msg.sender == s_owner, "NOT_OWNER");
-        _;
-    }
     modifier onlyMessageRelay() {
         require(msg.sender == s_messageRelay, "NOT_MESSAGE_RELAY");
         _;
