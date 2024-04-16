@@ -9,6 +9,8 @@ import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 import {SafeCastLib} from "solmate/utils/SafeCastLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
+import {Owned} from "solmate/auth/Owned.sol";
+
 import "forge-std/console.sol";
 
 contract LendingPool is Accounting {
@@ -17,8 +19,7 @@ contract LendingPool is Accounting {
     using FixedPointMathLib for uint256;
 
     // TODO: Add permissions (auth) to functions that require it.
-    constructor(address owner, address messageRelay) {
-        s_owner = owner;
+    constructor(address owner, address messageRelay) Owned(owner) {
         s_messageRelay = messageRelay;
     }
 
@@ -227,7 +228,7 @@ contract LendingPool is Accounting {
         _repay(asset, amount, msg.sender);
 
         // Transfer tokens from the user.
-        IERC20(asset).transferFrom(msg.sender, address(this), amount - 1);
+        IERC20(asset).transferFrom(msg.sender, address(this), amount);
 
         // Emit the event.
         emit Repay(msg.sender, asset, amount);
@@ -268,6 +269,9 @@ contract LendingPool is Accounting {
         // Accrue interest.
         // TODO: is this the right place to accrue interest?
         accrueInterest(asset);
+
+        // Update the cached debt of the asset.
+        cachedTotalBorrows[asset] -= amount;
     }
 
     // TODO: Periodicaly check the liquidity available on both chains and update the availableLiquidity storage variable

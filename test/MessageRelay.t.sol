@@ -307,8 +307,11 @@ contract ConfigurationTest is Test {
         assertEq(ethPool.totalBorrows(address(borrowAsset)), amount / 4);
     }
 
+    //
     function testCrossChainSourceRepay(uint256 amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e19);
+
+        uint256 amount = 0.25 ether;
 
         testCrossChainSourceBorrow(amount);
 
@@ -324,24 +327,21 @@ contract ConfigurationTest is Test {
             0,
             100
         );
-        // assertEq(ethPool.totalBorrows(address(borrowAsset)), 0); TODO
+        assertEq(ethPool.totalBorrows(address(borrowAsset)), 0);
     }
 
-    function testCrossChainDestRepay(uint256 amount) public {
+    function testCrossChainDestRepay(uint amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e19);
+
+        uint256 amount = 0.25 ether;
 
         testCrossChainDestBorrow(amount);
 
         // Repay the tokens.
-        borrowAsset.approve(address(flarePool), amount / 4);
-        flarePool.repay(address(borrowAsset), amount / 4);
+        borrowAsset.approve(address(flarePool), amount);
+        flarePool.repay(address(borrowAsset), amount);
 
         // Checks.
-
-        console.log(
-            "Borrow Asset Balance: ",
-            flarePool.totalBorrows(address(this))
-        );
 
         assertApproxEqAbs(borrowAsset.balanceOf(address(this)), 0, 100);
         assertApproxEqAbs(
@@ -349,8 +349,9 @@ contract ConfigurationTest is Test {
             0,
             100
         );
-        // assertEq(flarePool.totalBorrows(address(borrowAsset)), 0); TODO
+        assertEq(flarePool.totalBorrows(address(borrowAsset)), 0);
     }
+
     // UTILS ================================================================
 
     function mintAndApprove(

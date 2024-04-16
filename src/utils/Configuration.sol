@@ -11,9 +11,11 @@ import {InterestRateModel} from "../Interfaces/IIRM.sol";
 import {SafeCastLib} from "solmate/utils/SafeCastLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
+import {Owned} from "solmate/auth/Owned.sol";
+
 import "forge-std/console.sol";
 
-abstract contract Configuration is MainStorage {
+abstract contract Configuration is MainStorage, Owned {
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
 
