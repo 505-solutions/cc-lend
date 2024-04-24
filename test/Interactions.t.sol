@@ -56,10 +56,7 @@ contract ConfigurationTest is Test {
         borrowAsset.initialize("Borrow Test Token", "TBT", 18);
 
         pool.configureAsset(address(borrowAsset), 0, 1e18);
-        pool.setInterestRateModel(
-            address(borrowAsset),
-            address(interestRateModel)
-        );
+        pool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
 
         // liquidator = new MockLiquidator(pool, PriceOracle(address(oracle)));
     }
@@ -80,16 +77,8 @@ contract ConfigurationTest is Test {
 
         // Checks. Note that the default exchange rate is 1,
         // so the values should be equal to the input amount.
-        assertEq(
-            pool.balanceOf(address(asset), address(this)),
-            amount,
-            "Incorrect Balance"
-        );
-        assertEq(
-            pool.totalUnderlying(address(asset)),
-            amount,
-            "Incorrect Total Underlying"
-        );
+        assertEq(pool.balanceOf(address(asset), address(this)), amount, "Incorrect Balance");
+        assertEq(pool.totalUnderlying(address(asset)), amount, "Incorrect Total Underlying");
     }
 
     function testWithdrawal(uint256 amount) public {
@@ -102,16 +91,8 @@ contract ConfigurationTest is Test {
         pool.withdraw(address(asset), amount, false);
 
         // Checks.
-        assertEq(
-            asset.balanceOf(address(this)),
-            amount,
-            "Incorrect asset balance"
-        );
-        assertEq(
-            pool.balanceOf(address(asset), address(this)),
-            0,
-            "Incorrect pool balance"
-        );
+        assertEq(asset.balanceOf(address(this)), amount, "Incorrect asset balance");
+        assertEq(pool.balanceOf(address(asset), address(this)), 0, "Incorrect pool balance");
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -224,10 +205,7 @@ contract ConfigurationTest is Test {
 
         // Checks.
         assertEq(borrowAsset.balanceOf(address(this)), amount / 4);
-        assertEq(
-            pool.borrowBalance(address(borrowAsset), address(this)),
-            amount / 4
-        );
+        assertEq(pool.borrowBalance(address(borrowAsset), address(this)), amount / 4);
         assertEq(pool.totalBorrows(address(borrowAsset)), amount / 4);
         assertEq(pool.totalUnderlying(address(borrowAsset)), amount / 4);
     }
@@ -257,15 +235,10 @@ contract ConfigurationTest is Test {
         // Calculate the expected amount (after interest).
         // The borrow rate is constant, so the interest is always 5% per block.
         // expected = borrowed * interest ^ (blockDelta)
-        uint256 expected = (amount / 4).mulWadDown(
-            uint256(interestRateModel.getBorrowRate(0, 0, 0)).rpow(5, 1e18)
-        );
+        uint256 expected = (amount / 4).mulWadDown(uint256(interestRateModel.getBorrowRate(0, 0, 0)).rpow(5, 1e18));
 
         // Checks.
-        assertEq(
-            pool.borrowBalance(address(borrowAsset), address(this)),
-            expected
-        );
+        assertEq(pool.borrowBalance(address(borrowAsset), address(this)), expected);
         assertEq(pool.totalBorrows(address(borrowAsset)), expected);
         assertEq(pool.totalUnderlying(address(borrowAsset)), expected);
         assertEq(pool.balanceOf(address(borrowAsset), address(this)), expected);

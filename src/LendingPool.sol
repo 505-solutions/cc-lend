@@ -18,7 +18,9 @@ contract LendingPool is Accounting {
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
 
-    // TODO: Add permissions (auth) to functions that require it.
+    
+    // TODO: Make everything non-reentrant
+    
     constructor(address owner, address messageRelay) Owned(owner) {
         s_messageRelay = messageRelay;
     }
@@ -28,10 +30,7 @@ contract LendingPool is Accounting {
     //////////////////////////////////////////////////////////////*/
 
     // NOTE: Helper function for testing and possibly rebalancing the available liquidity.
-    function increaseAvailableLiquidity(
-        address asset,
-        uint256 amount
-    ) external {
+    function increaseAvailableLiquidity(address asset, uint256 amount) external {
         // Transfer underlying in from the user.
         IERC20(asset).transferFrom(msg.sender, address(this), amount);
 
@@ -51,33 +50,23 @@ contract LendingPool is Accounting {
         IERC20(asset).transferFrom(msg.sender, address(this), amount);
 
         // Emit the event.
-        emit Deposit(msg.sender, asset, amount);
+        emit Deposit(msg.sender, asset, amount, enable);
     }
 
     /// @notice Handle the deposit event passed from the Source Chain by the Message Relay.
-    function handleCrossChainDeposit(
-        address asset,
-        uint256 amount,
-        address depositor,
-        bool enable
-    ) external onlyMessageRelay {
+    function handleCrossChainDeposit(address asset, uint256 amount, address depositor, bool enable)
+        external
+        onlyMessageRelay
+    {
         _deposit(asset, amount, depositor, enable);
     }
 
-    function _deposit(
-        address asset,
-        uint256 amount,
-        address depositor,
-        bool enable
-    ) internal {
+    function _deposit(address asset, uint256 amount, address depositor, bool enable) internal {
         // Ensure the amount is valid.
         require(amount > 0, "INVALID_AMOUNT");
 
         // Calculate the amount of internal balance units to be stored.
-        uint256 shares = amount.mulDivDown(
-            baseUnits[asset],
-            internalBalanceExchangeRate(asset)
-        );
+        uint256 shares = amount.mulDivDown(baseUnits[asset], internalBalanceExchangeRate(asset));
 
         // Modify the internal balance of the sender.
         // Cannot overflow because the sum of all user
@@ -109,33 +98,23 @@ contract LendingPool is Accounting {
         IERC20(asset).transfer(msg.sender, amount);
 
         // Emit the event.
-        emit Withdraw(msg.sender, asset, amount);
+        emit Withdraw(msg.sender, asset, amount, disable);
     }
 
     /// @notice Handle the withdrawal event passed from the Source Chain by the Message Relay.
-    function handleCrossChainWithdrawal(
-        address asset,
-        uint256 amount,
-        address depositor,
-        bool disable
-    ) external onlyMessageRelay {
+    function handleCrossChainWithdrawal(address asset, uint256 amount, address depositor, bool disable)
+        external
+        onlyMessageRelay
+    {
         _withdraw(asset, amount, depositor, disable);
     }
 
-    function _withdraw(
-        address asset,
-        uint256 amount,
-        address depositor,
-        bool disable
-    ) internal {
+    function _withdraw(address asset, uint256 amount, address depositor, bool disable) internal {
         // Ensure the amount is valid.
         require(amount > 0, "AMOUNT_TOO_LOW");
 
         // Calculate the amount of internal balance units to be subtracted.
-        uint256 shares = amount.mulDivDown(
-            baseUnits[asset],
-            internalBalanceExchangeRate(asset)
-        );
+        uint256 shares = amount.mulDivDown(baseUnits[asset], internalBalanceExchangeRate(asset));
 
         // Modify the internal balance of the sender.
         internalBalances[asset][depositor] -= shares;
@@ -172,19 +151,11 @@ contract LendingPool is Accounting {
     }
 
     /// @notice Handle the borrow event passed from the Source Chain by the Message Relay.
-    function handleCrossChainBorrow(
-        address asset,
-        uint256 amount,
-        address depositor
-    ) external onlyMessageRelay {
+    function handleCrossChainBorrow(address asset, uint256 amount, address depositor) external onlyMessageRelay {
         _borrow(asset, amount, depositor);
     }
 
-    function _borrow(
-        address asset,
-        uint256 amount,
-        address depositor
-    ) internal {
+    function _borrow(address asset, uint256 amount, address depositor) internal {
         // Ensure the amount is valid.
         require(amount > 0, "AMOUNT_TOO_LOW");
 
@@ -199,10 +170,7 @@ contract LendingPool is Accounting {
         require(canBorrow(asset, depositor, amount));
 
         // Calculate the amount of internal debt units to be stored.
-        uint256 debtUnits = amount.mulDivDown(
-            baseUnits[asset],
-            internalDebtExchangeRate(asset)
-        );
+        uint256 debtUnits = amount.mulDivDown(baseUnits[asset], internalDebtExchangeRate(asset));
 
         // Update the internal borrow balance of the borrower.
         // Cannot overflow because the sum of all user
@@ -235,11 +203,7 @@ contract LendingPool is Accounting {
     }
 
     /// @notice Handle the repay event passed from the Source Chain by the Message Relay.
-    function handleCrossChainRepay(
-        address asset,
-        uint256 amount,
-        address depositor
-    ) external onlyMessageRelay {
+    function handleCrossChainRepay(address asset, uint256 amount, address depositor) external onlyMessageRelay {
         _repay(asset, amount, depositor);
     }
 
@@ -248,10 +212,7 @@ contract LendingPool is Accounting {
         require(amount > 0, "AMOUNT_TOO_LOW");
 
         // Calculate the amount of internal debt units to be stored.
-        uint256 debtUnits = amount.mulDivDown(
-            baseUnits[asset],
-            internalDebtExchangeRate(asset)
-        );
+        uint256 debtUnits = amount.mulDivDown(baseUnits[asset], internalDebtExchangeRate(asset));
 
         // Update the internal borrow balance of the borrower.
         internalDebt[asset][depositor] -= debtUnits;
@@ -281,26 +242,15 @@ contract LendingPool is Accounting {
     //////////////////////////////////////////////////////////////*/
 
     // TODO: Figure out and Test liquidatio Logic
-    function liquidateUser(
-        address borrowedAsset,
-        address collateralAsset,
-        address borrower,
-        uint256 repayAmount
-    ) external {
+    function liquidateUser(address borrowedAsset, address collateralAsset, address borrower, uint256 repayAmount)
+        external
+    {
         require(userLiquidatable(borrower), "CANNOT_LIQUIDATE_HEALTHY_USER");
 
         // Calculate the number of collateral asset to be seized
-        uint256 seizedCollateralAmount = seizeCollateral(
-            borrowedAsset,
-            collateralAsset,
-            repayAmount
-        );
+        uint256 seizedCollateralAmount = seizeCollateral(borrowedAsset, collateralAsset, repayAmount);
 
         // Assert user health factor is == MAX_HEALTH_FACTOR
-        require(
-            calculateHealthFactor(borrowedAsset, borrower, 0) ==
-                MAX_HEALTH_FACTOR,
-            "NOT_HEALTHY"
-        );
+        require(calculateHealthFactor(borrowedAsset, borrower, 0) == MAX_HEALTH_FACTOR, "NOT_HEALTHY");
     }
 }

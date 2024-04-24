@@ -5,7 +5,7 @@ abstract contract MainStorage {
     /*///////////////////////////////////////////////////////////////
                           ACCESS CONTROLS
     //////////////////////////////////////////////////////////////*/
-    address immutable s_messageRelay;
+    address s_messageRelay;
 
     modifier onlyMessageRelay() {
         require(msg.sender == s_messageRelay, "NOT_MESSAGE_RELAY");
@@ -22,11 +22,7 @@ abstract contract MainStorage {
     /// @notice Emitted when an InterestRateModel is changed.
     /// @param asset The underlying asset whose IRM was modified.
     /// @param newInterestRateModel The new IRM address.
-    event InterestRateModelUpdated(
-        address user,
-        address asset,
-        address newInterestRateModel
-    );
+    event InterestRateModelUpdated(address user, address asset, address newInterestRateModel);
 
     /*///////////////////////////////////////////////////////////////
                           ASSET CONFIGURATION
@@ -42,15 +38,12 @@ abstract contract MainStorage {
     /// @notice Emitted when a new asset is added to the pool.
     /// @param asset The underlying asset.
     /// @param configuration The lend/borrow factors for the asset.
-    event AssetConfigured(address indexed asset, Configuration configuration);
+    event AssetConfigured(address asset, Configuration configuration);
 
     /// @notice Emitted when an asset configuration is updated.
     /// @param asset The underlying asset.
     /// @param newConfiguration The new lend/borrow factors for the asset.
-    event AssetConfigurationUpdated(
-        address indexed asset,
-        Configuration newConfiguration
-    );
+    event AssetConfigurationUpdated(address asset, Configuration newConfiguration);
 
     /// @dev Asset configuration struct.
     struct Configuration {
@@ -66,13 +59,13 @@ abstract contract MainStorage {
     /// @param from The address that triggered the deposit.
     /// @param asset The underlying asset.
     /// @param amount The amount being deposited.
-    event Deposit(address indexed from, address indexed asset, uint256 amount);
+    event Deposit(address indexed from, address asset, uint256 amount, bool enable);
 
     /// @notice Emitted after a successful withdrawal.
     /// @param from The address that triggered the withdrawal.
     /// @param asset The underlying asset.
     /// @param amount The amount being withdrew.
-    event Withdraw(address indexed from, address indexed asset, uint256 amount);
+    event Withdraw(address indexed from, address asset, uint256 amount, bool disable);
 
     /*///////////////////////////////////////////////////////////////
                       BORROW/REPAYMENT INTERFACE
@@ -82,13 +75,13 @@ abstract contract MainStorage {
     /// @param from The address that triggered the borrow.
     /// @param asset The underlying asset.
     /// @param amount The amount being borrowed.
-    event Borrow(address indexed from, address indexed asset, uint256 amount);
+    event Borrow(address indexed from, address asset, uint256 amount);
 
     /// @notice Emitted after a successful repayment.
     /// @param from The address that triggered the repayment.
     /// @param asset The underlying asset.
     /// @param amount The amount being repaid.
-    event Repay(address indexed from, address indexed asset, uint256 amount);
+    event Repay(address indexed from, address asset, uint256 amount);
 
     /*///////////////////////////////////////////////////////////////
                           LIQUIDATION INTERFACE
@@ -104,12 +97,12 @@ abstract contract MainStorage {
     /// @notice Emitted after an asset has been collateralized.
     /// @param from The address that triggered the enablement.
     /// @param asset The underlying asset.
-    event AssetEnabled(address indexed from, address indexed asset);
+    event AssetEnabled(address indexed from, address asset);
 
     /// @notice Emitted after an asset has been disabled.
     /// @param from The address that triggered the disablement.
     /// @param asset The underlying asset.
-    event AssetDisabled(address indexed from, address indexed asset);
+    event AssetDisabled(address indexed from, address asset);
 
     /// @notice Maps users to an array of assets they have listed as collateral.
     mapping(address => address[]) public userCollateral;

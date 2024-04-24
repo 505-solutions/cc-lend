@@ -56,10 +56,7 @@ contract ConfigurationTest is Test {
         borrowAsset.initialize("Borrow Test Token", "TBT", 18);
 
         pool.configureAsset(address(borrowAsset), 0, 1e18);
-        pool.setInterestRateModel(
-            address(borrowAsset),
-            address(interestRateModel)
-        );
+        pool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
 
         // liquidator = new MockLiquidator(pool, PriceOracle(address(oracle)));
     }
@@ -97,10 +94,7 @@ contract ConfigurationTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function testIRMConfiguration() public {
-        assertEq(
-            address(pool.interestRateModels(address(asset))),
-            address(interestRateModel)
-        );
+        assertEq(address(pool.interestRateModels(address(asset))), address(interestRateModel));
     }
 
     // function testNewIRMConfiguration() public {
@@ -134,9 +128,7 @@ contract ConfigurationTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function testAssetConfiguration() public {
-        (uint256 lendFactor, uint256 borrowFactor) = pool.configurations(
-            address(asset)
-        );
+        (uint256 lendFactor, uint256 borrowFactor) = pool.configurations(address(asset));
 
         assertEq(lendFactor, 0.5e18);
         assertEq(borrowFactor, 0);

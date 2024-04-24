@@ -19,6 +19,10 @@ abstract contract Configuration is MainStorage, Owned {
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
 
+    function setMessageRelay(address relay) public onlyOwner {
+        s_messageRelay = relay;
+    }
+
     /*///////////////////////////////////////////////////////////////
                           INTEREST RATE CONFIGURATION
     //////////////////////////////////////////////////////////////*/
@@ -26,10 +30,7 @@ abstract contract Configuration is MainStorage, Owned {
     /// @notice Sets a new Interest Rate Model for a specfic asset.
     /// @param asset The underlying asset.
     /// @param newInterestRateModel The new IRM address.
-    function setInterestRateModel(
-        address asset,
-        address newInterestRateModel
-    ) external onlyOwner {
+    function setInterestRateModel(address asset, address newInterestRateModel) external onlyOwner {
         // Update the asset's Interest Rate Model.
         interestRateModels[asset] = newInterestRateModel;
 
@@ -48,15 +49,10 @@ abstract contract Configuration is MainStorage, Owned {
     ) external onlyOwner {
         // Ensure that this asset has not been configured.
         require(
-            configurations[asset].borrowFactor == 0 &&
-                configurations[asset].lendFactor == 0,
-            "ASSET_ALREADY_CONFIGURED"
+            configurations[asset].borrowFactor == 0 && configurations[asset].lendFactor == 0, "ASSET_ALREADY_CONFIGURED"
         );
 
-        Configuration memory configuration = Configuration(
-            lendFactor,
-            borrowFactor
-        );
+        Configuration memory configuration = Configuration(lendFactor, borrowFactor);
 
         configurations[asset] = configuration;
         baseUnits[asset] = 10 ** IERC20(asset).decimals();
@@ -68,10 +64,7 @@ abstract contract Configuration is MainStorage, Owned {
     /// @notice Updates the lend/borrow factors of an asset.
     /// @param asset The underlying asset.
     /// @param newConfiguration The new lend/borrow factors for the asset.
-    function updateConfiguration(
-        address asset,
-        Configuration memory newConfiguration
-    ) external onlyOwner {
+    function updateConfiguration(address asset, Configuration memory newConfiguration) external onlyOwner {
         // Update the asset configuration.
         configurations[asset] = newConfiguration;
 
@@ -87,6 +80,7 @@ abstract contract Configuration is MainStorage, Owned {
     function enableAsset(address asset) public {
         _enableAsset(asset, msg.sender);
     }
+
     function _enableAsset(address asset, address depositor) internal {
         // Ensure the user has not enabled this asset as collateral.
         if (enabledCollateral[depositor][asset]) {
@@ -105,6 +99,7 @@ abstract contract Configuration is MainStorage, Owned {
     function disableAsset(address asset) public {
         _disableAsset(asset, msg.sender);
     }
+
     function _disableAsset(address asset, address depositor) internal {
         // Ensure that the user is not borrowing this asset.
         if (internalDebt[asset][depositor] > 0) return;
@@ -116,9 +111,7 @@ abstract contract Configuration is MainStorage, Owned {
         for (uint256 i = 0; i < userCollateral[depositor].length; i++) {
             if (userCollateral[depositor][i] == asset) {
                 // Copy the value of the last element in the array.
-                address last = userCollateral[depositor][
-                    userCollateral[depositor].length - 1
-                ];
+                address last = userCollateral[depositor][userCollateral[depositor].length - 1];
 
                 // Remove the last element from the array.
                 delete userCollateral[depositor][
