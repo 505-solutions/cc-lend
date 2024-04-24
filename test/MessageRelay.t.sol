@@ -48,15 +48,9 @@ contract ConfigurationTest is Test {
         asset.initialize("Test Token", "TEST", 18);
 
         ethPool.configureAsset(address(asset), 0.5e18, 0);
-        ethPool.setInterestRateModel(
-            address(asset),
-            address(interestRateModel)
-        );
+        ethPool.setInterestRateModel(address(asset), address(interestRateModel));
         flarePool.configureAsset(address(asset), 0.5e18, 0);
-        flarePool.setInterestRateModel(
-            address(asset),
-            address(interestRateModel)
-        );
+        flarePool.setInterestRateModel(address(asset), address(interestRateModel));
 
         oracle = new MockPriceOracle();
         oracle.updatePrice(address(asset), 1e18);
@@ -67,15 +61,9 @@ contract ConfigurationTest is Test {
         borrowAsset.initialize("Borrow Test Token", "TBT", 18);
 
         ethPool.configureAsset(address(borrowAsset), 0, 1e18);
-        ethPool.setInterestRateModel(
-            address(borrowAsset),
-            address(interestRateModel)
-        );
+        ethPool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
         flarePool.configureAsset(address(borrowAsset), 0, 1e18);
-        flarePool.setInterestRateModel(
-            address(borrowAsset),
-            address(interestRateModel)
-        );
+        flarePool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
 
         // liquidator = new MockLiquidator(pool, PriceOracle(address(oracle)));
     }
@@ -105,35 +93,14 @@ contract ConfigurationTest is Test {
 
         // Checks. Note that the default exchange rate is 1,
         // so the values should be equal to the input amount.
-        assertEq(
-            ethPool.balanceOf(address(asset), address(this)),
-            amount,
-            "Incorrect Balance"
-        );
-        assertEq(
-            ethPool.totalUnderlying(address(asset)),
-            amount,
-            "Incorrect Total Underlying"
-        );
+        assertEq(ethPool.balanceOf(address(asset), address(this)), amount, "Incorrect Balance");
+        assertEq(ethPool.totalUnderlying(address(asset)), amount, "Incorrect Total Underlying");
 
-        flarePool.handleCrossChainDeposit(
-            address(asset),
-            amount,
-            address(this),
-            true
-        );
+        flarePool.handleCrossChainDeposit(address(asset), amount, address(this), true);
 
         // The message was relayed and the balance was updated.
-        assertEq(
-            flarePool.balanceOf(address(asset), address(this)),
-            amount,
-            "Incorrect Balance"
-        );
-        assertEq(
-            flarePool.totalUnderlying(address(asset)),
-            amount,
-            "Incorrect Total Underlying"
-        );
+        assertEq(flarePool.balanceOf(address(asset), address(this)), amount, "Incorrect Balance");
+        assertEq(flarePool.totalUnderlying(address(asset)), amount, "Incorrect Total Underlying");
     }
 
     function testCrossChainSourceWithdrawal(uint256 amount) public {
@@ -146,34 +113,13 @@ contract ConfigurationTest is Test {
         ethPool.withdraw(address(asset), amount, false);
 
         // Checks.
-        assertEq(
-            asset.balanceOf(address(this)),
-            amount,
-            "Incorrect asset balance"
-        );
-        assertEq(
-            ethPool.balanceOf(address(asset), address(this)),
-            0,
-            "Incorrect pool balance"
-        );
+        assertEq(asset.balanceOf(address(this)), amount, "Incorrect asset balance");
+        assertEq(ethPool.balanceOf(address(asset), address(this)), 0, "Incorrect pool balance");
 
-        flarePool.handleCrossChainWithdrawal(
-            address(asset),
-            amount,
-            address(this),
-            false
-        );
+        flarePool.handleCrossChainWithdrawal(address(asset), amount, address(this), false);
 
-        assertEq(
-            asset.balanceOf(address(this)),
-            amount,
-            "Incorrect asset balance"
-        );
-        assertEq(
-            flarePool.balanceOf(address(asset), address(this)),
-            0,
-            "Incorrect pool balance"
-        );
+        assertEq(asset.balanceOf(address(this)), amount, "Incorrect asset balance");
+        assertEq(flarePool.balanceOf(address(asset), address(this)), 0, "Incorrect pool balance");
     }
 
     function testCrossChainDestWithdrawal(uint256 amount) public {
@@ -184,45 +130,19 @@ contract ConfigurationTest is Test {
 
         increaseExchangeLiquidity();
 
-        console.log(
-            "Flare Pool Balance: ",
-            flarePool.balanceOf(address(asset), address(this))
-        );
+        console.log("Flare Pool Balance: ", flarePool.balanceOf(address(asset), address(this)));
 
         // Withdraw the asset.
         flarePool.withdraw(address(asset), amount, false);
 
         // Checks.
-        assertEq(
-            asset.balanceOf(address(this)),
-            amount,
-            "Incorrect asset balance"
-        );
-        assertApproxEqAbs(
-            flarePool.balanceOf(address(asset), address(this)),
-            100 ether,
-            100,
-            "Incorrect pool balance"
-        );
+        assertEq(asset.balanceOf(address(this)), amount, "Incorrect asset balance");
+        assertApproxEqAbs(flarePool.balanceOf(address(asset), address(this)), 100 ether, 100, "Incorrect pool balance");
 
-        ethPool.handleCrossChainWithdrawal(
-            address(asset),
-            amount,
-            address(this),
-            false
-        );
+        ethPool.handleCrossChainWithdrawal(address(asset), amount, address(this), false);
 
-        assertEq(
-            asset.balanceOf(address(this)),
-            amount,
-            "Incorrect asset balance"
-        );
-        assertApproxEqAbs(
-            ethPool.balanceOf(address(asset), address(this)),
-            100 ether,
-            100,
-            "Incorrect pool balance"
-        );
+        assertEq(asset.balanceOf(address(this)), amount, "Incorrect asset balance");
+        assertApproxEqAbs(ethPool.balanceOf(address(asset), address(this)), 100 ether, 100, "Incorrect pool balance");
     }
 
     function testCrossChainSourceBorrow(uint256 amount) public {
@@ -245,23 +165,13 @@ contract ConfigurationTest is Test {
 
         // Checks.
         assertEq(borrowAsset.balanceOf(address(this)), amount / 4);
-        assertEq(
-            ethPool.borrowBalance(address(borrowAsset), address(this)),
-            amount / 4
-        );
+        assertEq(ethPool.borrowBalance(address(borrowAsset), address(this)), amount / 4);
         assertEq(ethPool.totalBorrows(address(borrowAsset)), amount / 4);
 
-        flarePool.handleCrossChainBorrow(
-            address(borrowAsset),
-            amount / 4,
-            address(this)
-        );
+        flarePool.handleCrossChainBorrow(address(borrowAsset), amount / 4, address(this));
 
         assertEq(borrowAsset.balanceOf(address(this)), amount / 4);
-        assertEq(
-            flarePool.borrowBalance(address(borrowAsset), address(this)),
-            amount / 4
-        );
+        assertEq(flarePool.borrowBalance(address(borrowAsset), address(this)), amount / 4);
         assertEq(flarePool.totalBorrows(address(borrowAsset)), amount / 4);
     }
 
@@ -287,23 +197,13 @@ contract ConfigurationTest is Test {
 
         // Checks.
         assertEq(borrowAsset.balanceOf(address(this)), amount / 4);
-        assertEq(
-            flarePool.borrowBalance(address(borrowAsset), address(this)),
-            amount / 4
-        );
+        assertEq(flarePool.borrowBalance(address(borrowAsset), address(this)), amount / 4);
         assertEq(flarePool.totalBorrows(address(borrowAsset)), amount / 4);
 
-        ethPool.handleCrossChainBorrow(
-            address(borrowAsset),
-            amount / 4,
-            address(this)
-        );
+        ethPool.handleCrossChainBorrow(address(borrowAsset), amount / 4, address(this));
 
         assertEq(borrowAsset.balanceOf(address(this)), amount / 4);
-        assertEq(
-            ethPool.borrowBalance(address(borrowAsset), address(this)),
-            amount / 4
-        );
+        assertEq(ethPool.borrowBalance(address(borrowAsset), address(this)), amount / 4);
         assertEq(ethPool.totalBorrows(address(borrowAsset)), amount / 4);
     }
 
@@ -322,15 +222,11 @@ contract ConfigurationTest is Test {
         // Checks.
 
         assertApproxEqAbs(borrowAsset.balanceOf(address(this)), 0, 100);
-        assertApproxEqAbs(
-            ethPool.borrowBalance(address(borrowAsset), address(this)),
-            0,
-            100
-        );
+        assertApproxEqAbs(ethPool.borrowBalance(address(borrowAsset), address(this)), 0, 100);
         assertEq(ethPool.totalBorrows(address(borrowAsset)), 0);
     }
 
-    function testCrossChainDestRepay(uint amount) public {
+    function testCrossChainDestRepay(uint256 amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e19);
 
         uint256 amount = 0.25 ether;
@@ -344,21 +240,13 @@ contract ConfigurationTest is Test {
         // Checks.
 
         assertApproxEqAbs(borrowAsset.balanceOf(address(this)), 0, 100);
-        assertApproxEqAbs(
-            flarePool.borrowBalance(address(borrowAsset), address(this)),
-            0,
-            100
-        );
+        assertApproxEqAbs(flarePool.borrowBalance(address(borrowAsset), address(this)), 0, 100);
         assertEq(flarePool.totalBorrows(address(borrowAsset)), 0);
     }
 
     // UTILS ================================================================
 
-    function mintAndApprove(
-        MockERC20 underlying,
-        uint256 amount,
-        address poolAddress
-    ) internal {
+    function mintAndApprove(MockERC20 underlying, uint256 amount, address poolAddress) internal {
         underlying.mint(address(this), amount);
         underlying.approve(poolAddress, amount);
 

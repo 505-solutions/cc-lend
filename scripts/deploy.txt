@@ -7,9 +7,6 @@ forge create --rpc-url https://sepolia.rpc.thirdweb.com \
 
 
 
-Deployer: 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56
-Deployed to: 0x703371BbcDA9ff7Fc5BCEe1b0636d6b0EB056D30
-Transaction hash: 0x45e7ef112ec83ea7162f139b98c7847a50ce73c8f62c4c13f2b1cc90b46ce08b
 
 
 
@@ -18,6 +15,18 @@ forge verify-contract \
     --watch \
     --constructor-args $(cast abi-encode "constructor(address,address)" 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56) \
     --etherscan-api-key <your_etherscan_api_key> \
-    0x703371BbcDA9ff7Fc5BCEe1b0636d6b0EB056D30 \
+    0xb8C6B2fc7b4FbD12c986910b60712609C9132568 \
     src/LendingPool.sol:LendingPool
 
+
+
+v1:
+Deployer: 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56
+Deployed to: 0x703371BbcDA9ff7Fc5BCEe1b0636d6b0EB056D30
+Transaction hash: 0x45e7ef112ec83ea7162f139b98c7847a50ce73c8f62c4c13f2b1cc90b46ce08b
+
+
+v2:
+Deployer: 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56
+Deployed to: 0xb8C6B2fc7b4FbD12c986910b60712609C9132568
+Transaction hash: 0x7349937689a1869053ccf0892e21efa60c9540b57f8aed046a650ab65429c7d6
