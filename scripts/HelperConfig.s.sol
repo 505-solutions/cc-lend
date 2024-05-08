@@ -41,13 +41,23 @@ contract HelperConfig is Script {
     function getFlareConfig() public view returns (NetworkConfig memory flareNetworkConfig) {
         flareNetworkConfig = NetworkConfig({
             lendingPool: 0x453EEbe51c3A91dbdE0DAc2858A7BFe97dC09027,
-            messageRelay: 0x6e32F10eae10687f0A278A9E20e3802E0bB0943a,
+            messageRelay: 0x288760379fb8AEb509dBafe7898014107E47d91B,
             priceOracle: 0x9bc96047C57154B455d68aFbc0c5e6Fed573184B, // ETH / USD
             interesRateModel: 0x4FbFF7A75A97E02a168526464968A591e5Ec77c1,
             weth: 0xc89b59096964e48c6A1456c08a94D6b2A0f6Fa5B,
             usdc: 0x013bbC069FdD066009e0701Fe9969d4dDf3c7e4E,
             deployerKey: vm.envUint("PRIVATE_KEY")
         });
+    }
+
+    function getEvmTxVerifier() public view returns (address) {
+        if (block.chainid == 11155111) {
+            return address(0);
+        } else if (block.chainid == 16) {
+            return 0xf37AD1278917c04fb291C75a42e61710964Cb57c;
+        }
+
+        return address(0);
     }
 
     function getOrCreateAnvilEthConfig() public returns (NetworkConfig memory anvilNetworkConfig) {}

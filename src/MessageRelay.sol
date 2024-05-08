@@ -17,6 +17,11 @@ contract MessageRelay is Owned {
     error TxAlreadyProcessed(); // Can't process the same tx twice
     error InvalidMessageType(); // Deposit, Withdraw, Borrow, Repay
 
+    event DepositRelayed(address indexed from, address asset, uint256 amount, bool enable);
+    event WithdrawRelayed(address indexed from, address asset, uint256 amount, bool disable);
+    event BorrowRelayed(address indexed from, address asset, uint256 amount);
+    event RepayRelayed(address indexed from, address asset, uint256 amount);
+
     IEVMTransactionVerification private s_evmTxVerifier;
     ILendingPool private s_lendingPool;
 
@@ -61,6 +66,8 @@ contract MessageRelay is Owned {
             (address asset, uint256 amount, bool enable) = abi.decode(_event.data, (address, uint256, bool));
 
             s_lendingPool.handleCrossChainDeposit(asset, amount, depositor, enable);
+
+            emit DepositRelayed(depositor, asset, amount, enable);
         } else if (_event.topics[0] != keccak256("Withdraw(address,address,uint256,bool)")) {
             // * WITHDRAWAL
 
@@ -68,6 +75,8 @@ contract MessageRelay is Owned {
             (address asset, uint256 amount, bool disable) = abi.decode(_event.data, (address, uint256, bool));
 
             s_lendingPool.handleCrossChainWithdrawal(asset, amount, depositor, disable);
+
+            emit WithdrawRelayed(depositor, asset, amount, disable);
         } else if (_event.topics[0] != keccak256("Borrow(address,address,uint256)")) {
             // * BORROW
 
@@ -75,6 +84,8 @@ contract MessageRelay is Owned {
             (address asset, uint256 amount) = abi.decode(_event.data, (address, uint256));
 
             s_lendingPool.handleCrossChainBorrow(asset, amount, depositor);
+
+            emit BorrowRelayed(depositor, asset, amount);
         } else if (_event.topics[0] != keccak256("Repay(address,address,uint256)")) {
             // * REPAY
 
@@ -82,6 +93,8 @@ contract MessageRelay is Owned {
             (address asset, uint256 amount) = abi.decode(_event.data, (address, uint256));
 
             s_lendingPool.handleCrossChainRepay(asset, amount, depositor);
+
+            emit RepayRelayed(depositor, asset, amount);
         } else {
             revert InvalidMessageType();
         }

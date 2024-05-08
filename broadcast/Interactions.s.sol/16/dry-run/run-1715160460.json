@@ -1,0 +1,62 @@
+{
+  "transactions": [
+    {
+      "hash": null,
+      "transactionType": "CALL",
+      "contractName": null,
+      "contractAddress": "0x453EEbe51c3A91dbdE0DAc2858A7BFe97dC09027",
+      "function": "updateConfiguration(address,(uint256,uint256))",
+      "arguments": [
+        "0xc89b59096964e48c6A1456c08a94D6b2A0f6Fa5B",
+        "(900000000000000000, 900000000000000000)"
+      ],
+      "transaction": {
+        "type": "0x02",
+        "from": "0xacedf8742edc7d923e1e6462852cce136ee9fb56",
+        "to": "0x453eebe51c3a91dbde0dac2858a7bfe97dc09027",
+        "gas": "0x130e5",
+        "value": "0x0",
+        "data": "0xbac5917e000000000000000000000000c89b59096964e48c6a1456c08a94d6b2a0f6fa5b0000000000000000000000000000000000000000000000000c7d713b49da00000000000000000000000000000000000000000000000000000c7d713b49da0000",
+        "nonce": "0xe",
+        "accessList": []
+      },
+      "additionalContracts": [],
+      "isFixedGasLimit": false
+    },
+    {
+      "hash": null,
+      "transactionType": "CALL",
+      "contractName": null,
+      "contractAddress": "0x453EEbe51c3A91dbdE0DAc2858A7BFe97dC09027",
+      "function": "updateConfiguration(address,(uint256,uint256))",
+      "arguments": [
+        "0x013bbC069FdD066009e0701Fe9969d4dDf3c7e4E",
+        "(900000000000000000, 900000000000000000)"
+      ],
+      "transaction": {
+        "type": "0x02",
+        "from": "0xacedf8742edc7d923e1e6462852cce136ee9fb56",
+        "to": "0x453eebe51c3a91dbde0dac2858a7bfe97dc09027",
+        "gas": "0x130e5",
+        "value": "0x0",
+        "data": "0xbac5917e000000000000000000000000013bbc069fdd066009e0701fe9969d4ddf3c7e4e0000000000000000000000000000000000000000000000000c7d713b49da00000000000000000000000000000000000000000000000000000c7d713b49da0000",
+        "nonce": "0xf",
+        "accessList": []
+      },
+      "additionalContracts": [],
+      "isFixedGasLimit": false
+    }
+  ],
+  "receipts": [],
+  "libraries": [],
+  "pending": [],
+  "returns": {
+    "0": {
+      "internal_type": "contract LendingPool",
+      "value": "0x453EEbe51c3A91dbdE0DAc2858A7BFe97dC09027"
+    }
+  },
+  "timestamp": 1715160460,
+  "chain": 16,
+  "commit": "c7e2360"
+}

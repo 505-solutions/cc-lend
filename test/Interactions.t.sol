@@ -206,6 +206,37 @@ contract ConfigurationTest is Test {
         assertEq(pool.totalUnderlying(address(borrowAsset)), amount / 4);
     }
 
+    function testBorrow2() public {
+        // vm.assume(amount >= 1e5 && amount <= 1e27);
+
+        uint256 amount = 1 ether;
+        uint256 borrowAmount = 1200 ether;
+
+        // Deposit tokens and enable them as collateral.
+        mintAndApprove(asset, amount);
+        pool.deposit(address(asset), amount, true);
+
+        // Mint borrow tokens and supply them to the pool.
+        mintAndApprove(borrowAsset, borrowAmount);
+        pool.deposit(address(borrowAsset), borrowAmount, false);
+
+        // Set the price of collateral to 1 ETH.
+        oracle.updatePrice(address(asset), 1e18);
+
+        oracle.updatePrice(address(borrowAsset), 0.0003 ether);
+
+        // Borrow the asset.
+        pool.borrow(address(borrowAsset), borrowAmount);
+
+        console.log(pool.totalBorrows(address(borrowAsset)));
+
+        // Checks.
+        assertEq(borrowAsset.balanceOf(address(this)), borrowAmount);
+        assertEq(pool.borrowBalance(address(borrowAsset), address(this)), borrowAmount);
+        assertEq(pool.totalBorrows(address(borrowAsset)), borrowAmount);
+        assertEq(pool.totalUnderlying(address(borrowAsset)), borrowAmount);
+    }
+
     function testRepay(uint256 amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e27);
 
