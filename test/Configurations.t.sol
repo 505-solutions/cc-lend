@@ -42,8 +42,7 @@ contract ConfigurationTest is Test {
 
         interestRateModel = new MockInterestRateModel();
 
-        asset = new MockERC20();
-        asset.initialize("Test Token", "TEST", 18);
+        asset = new MockERC20("Mock Token", "MKT", 18);
 
         pool.configureAsset(address(asset), 0.5e18, 0);
         pool.setInterestRateModel(address(asset), address(interestRateModel));
@@ -52,8 +51,7 @@ contract ConfigurationTest is Test {
         oracle.updatePrice(address(asset), 1e18);
         pool.setOracle(address(oracle));
 
-        borrowAsset = new MockERC20();
-        borrowAsset.initialize("Borrow Test Token", "TBT", 18);
+        borrowAsset = new MockERC20("Mock Token", "MKT", 18);
 
         pool.configureAsset(address(borrowAsset), 0, 1e18);
         pool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
@@ -136,8 +134,7 @@ contract ConfigurationTest is Test {
     }
 
     // function testNewAssetConfiguration() public {
-    //     MockERC20 newAsset = new MockERC20();
-    //     newAsset.initialize("New Test Token", "TEST", 18);
+    //     MockERC20 newAsset = new MockERC20("Mock Token", "MKT", 18);
 
     //     pool.configureAsset(newAsset, 0.6e18, 0);
 
@@ -163,8 +160,7 @@ contract ConfigurationTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     // function testFailNewAssetConfigurationNotOwner() public {
-    //     MockERC20 newAsset = new MockERC20();
-    //     newAsset.initialize("New Test Token", "TEST", 18);
+    //     MockERC20 newAsset = new MockERC20("Mock Token", "MKT", 18);
 
     //     vm.startPrank(address(0xBABE));
     //     pool.configureAsset(newAsset, 0.6e18, 0);

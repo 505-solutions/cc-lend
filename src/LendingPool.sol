@@ -18,9 +18,8 @@ contract LendingPool is Accounting {
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
 
-    
     // TODO: Make everything non-reentrant
-    
+
     constructor(address owner, address messageRelay) Owned(owner) {
         s_messageRelay = messageRelay;
     }

@@ -3,3 +3,4 @@ forge-std/=lib/forge-std/src/
 @openzeppelin/contracts/=node_modules/@openzeppelin/contracts/
 
 solmate/=node_modules/solmate/src/
+eth-gas-reporter/=node_modules/eth-gas-reporter/
