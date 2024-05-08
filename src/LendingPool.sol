@@ -53,10 +53,14 @@ contract LendingPool is Accounting {
     }
 
     /// @notice Handle the deposit event passed from the Source Chain by the Message Relay.
-    function handleCrossChainDeposit(address asset, uint256 amount, address depositor, bool enable)
+    function handleCrossChainDeposit(address counterpartAsset, uint256 amount, address depositor, bool enable)
         external
         onlyMessageRelay
     {
+        address asset = fromAssetCounterpart[counterpartAsset];
+
+        console.log("asset: ", asset);
+
         _deposit(asset, amount, depositor, enable);
     }
 
@@ -101,10 +105,12 @@ contract LendingPool is Accounting {
     }
 
     /// @notice Handle the withdrawal event passed from the Source Chain by the Message Relay.
-    function handleCrossChainWithdrawal(address asset, uint256 amount, address depositor, bool disable)
+    function handleCrossChainWithdrawal(address counterpartAsset, uint256 amount, address depositor, bool disable)
         external
         onlyMessageRelay
     {
+        address asset = fromAssetCounterpart[counterpartAsset];
+
         _withdraw(asset, amount, depositor, disable);
     }
 
@@ -150,7 +156,12 @@ contract LendingPool is Accounting {
     }
 
     /// @notice Handle the borrow event passed from the Source Chain by the Message Relay.
-    function handleCrossChainBorrow(address asset, uint256 amount, address depositor) external onlyMessageRelay {
+    function handleCrossChainBorrow(address counterpartAsset, uint256 amount, address depositor)
+        external
+        onlyMessageRelay
+    {
+        address asset = fromAssetCounterpart[counterpartAsset];
+
         _borrow(asset, amount, depositor);
     }
 
@@ -202,7 +213,12 @@ contract LendingPool is Accounting {
     }
 
     /// @notice Handle the repay event passed from the Source Chain by the Message Relay.
-    function handleCrossChainRepay(address asset, uint256 amount, address depositor) external onlyMessageRelay {
+    function handleCrossChainRepay(address counterpartAsset, uint256 amount, address depositor)
+        external
+        onlyMessageRelay
+    {
+        address asset = fromAssetCounterpart[counterpartAsset];
+
         _repay(asset, amount, depositor);
     }
 

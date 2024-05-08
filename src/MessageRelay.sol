@@ -12,6 +12,8 @@ import {Owned} from "solmate/auth/Owned.sol";
 import {EVMTransaction, IEVMTransactionVerification} from "./Interfaces/IEVMTransactionVerification.sol";
 import {ILendingPool} from "./Interfaces/ILendingPool.sol";
 
+import "forge-std/console.sol";
+
 contract MessageRelay is Owned {
     error InvalidProof(); // MerkleProof verification failed
     error TxAlreadyProcessed(); // Can't process the same tx twice
@@ -22,8 +24,8 @@ contract MessageRelay is Owned {
     event BorrowRelayed(address indexed from, address asset, uint256 amount);
     event RepayRelayed(address indexed from, address asset, uint256 amount);
 
-    IEVMTransactionVerification private s_evmTxVerifier;
-    ILendingPool private s_lendingPool;
+    IEVMTransactionVerification public s_evmTxVerifier;
+    ILendingPool public s_lendingPool;
 
     // event Deposit(address indexed from, address asset, uint256 amount, bool enable);
 
@@ -45,7 +47,6 @@ contract MessageRelay is Owned {
     }
 
     // TODO: Make everything non-reentrant
-
     function verifyCrossChainAction(EVMTransaction.Proof calldata _proof) external {
         if (s_processedTxHashes[_proof.data.requestBody.transactionHash]) revert TxAlreadyProcessed();
 
@@ -55,11 +56,11 @@ contract MessageRelay is Owned {
             revert InvalidProof();
         }
 
-        EVMTransaction.Event calldata _event = _proof.data.responseBody.events[0];
+        EVMTransaction.Event calldata _event = _proof.data.responseBody.events[1];
 
         s_processedTxHashes[_proof.data.requestBody.transactionHash] = true;
 
-        if (_event.topics[0] != keccak256("Deposit(address,address,uint256,bool)")) {
+        if (_event.topics[0] == keccak256("Deposit(address,address,uint256,bool)")) {
             // * DEPOSIT
 
             address depositor = address(uint160(uint256(_event.topics[1])));
@@ -68,7 +69,7 @@ contract MessageRelay is Owned {
             s_lendingPool.handleCrossChainDeposit(asset, amount, depositor, enable);
 
             emit DepositRelayed(depositor, asset, amount, enable);
-        } else if (_event.topics[0] != keccak256("Withdraw(address,address,uint256,bool)")) {
+        } else if (_event.topics[0] == keccak256("Withdraw(address,address,uint256,bool)")) {
             // * WITHDRAWAL
 
             address depositor = address(uint160(uint256(_event.topics[1])));
@@ -77,7 +78,7 @@ contract MessageRelay is Owned {
             s_lendingPool.handleCrossChainWithdrawal(asset, amount, depositor, disable);
 
             emit WithdrawRelayed(depositor, asset, amount, disable);
-        } else if (_event.topics[0] != keccak256("Borrow(address,address,uint256)")) {
+        } else if (_event.topics[0] == keccak256("Borrow(address,address,uint256)")) {
             // * BORROW
 
             address depositor = address(uint160(uint256(_event.topics[1])));
@@ -86,7 +87,7 @@ contract MessageRelay is Owned {
             s_lendingPool.handleCrossChainBorrow(asset, amount, depositor);
 
             emit BorrowRelayed(depositor, asset, amount);
-        } else if (_event.topics[0] != keccak256("Repay(address,address,uint256)")) {
+        } else if (_event.topics[0] == keccak256("Repay(address,address,uint256)")) {
             // * REPAY
 
             address depositor = address(uint160(uint256(_event.topics[1])));

@@ -22,7 +22,23 @@ Transaction hash: 0x889a3d98807c30d709090e748b79b80eff072ca43b6a86fe734350926a22
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-source .env
+forge verify-contract \
+    --chain-id 16 \
+    --watch \
+    --verifier blockscout \
+    --constructor-args $(cast abi-encode "constructor(address,address)" 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56) \
+    --verifier-url https://coston-explorer.flare.network/api \
+    0x595EE29025Ba54E4f4031DaA89cc6DEed942e053 \
+    src/LendingPool.sol:LendingPool
 
-forge script script/Deploy.s.sol:DeployPoolScript --rpc-url $SEPOLIA_RPC_URL --broadcast --verify -vvvv
+
+
+forge verify-contract \
+    --chain-id 16 \
+    --watch \
+    --verifier blockscout \
+    --constructor-args $(cast abi-encode "constructor(address)" 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56) \
+    --verifier-url https://coston-explorer.flare.network/api \
+    0xa80ea62d1f5bBD985d20e18FA0bb46EE75A8a8d8 \
+    src/MessageRelay.sol:MessageRelay
 

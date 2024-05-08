@@ -27,16 +27,18 @@ contract ConfigurePoolScript is Script {
             uint256 deployerKey
         ) = helperConfig.activeNetworkConfig();
 
+        (address counterWeth, address counterUsdc) = helperConfig.activeCounterAssets();
+
         LendingPool pool = LendingPool(lendingPool);
 
         vm.startBroadcast(deployerKey);
 
         pool.setOracle(priceOracle);
 
-        pool.configureAsset(weth, 0.9e18, 0.9e18);
+        pool.configureAsset(weth, counterWeth, 0.9e18, 0.9e18);
         pool.setInterestRateModel(weth, interesRateModel);
 
-        pool.configureAsset(usdc, 0.9e18, 0.9e18);
+        pool.configureAsset(usdc, counterUsdc, 0.9e18, 0.9e18);
         pool.setInterestRateModel(usdc, interesRateModel);
 
         MockPriceOracle(priceOracle).updatePrice(weth, 1e18);
