@@ -44,8 +44,7 @@ contract ConfigurationTest is Test {
 
         interestRateModel = new MockInterestRateModel();
 
-        asset = new MockERC20();
-        asset.initialize("Test Token", "TEST", 18);
+        asset = new MockERC20("Mock Token", "MKT", 18);
 
         ethPool.configureAsset(address(asset), 0.5e18, 0);
         ethPool.setInterestRateModel(address(asset), address(interestRateModel));
@@ -57,8 +56,7 @@ contract ConfigurationTest is Test {
         ethPool.setOracle(address(oracle));
         flarePool.setOracle(address(oracle));
 
-        borrowAsset = new MockERC20();
-        borrowAsset.initialize("Borrow Test Token", "TBT", 18);
+        borrowAsset = new MockERC20("Mock Token", "MKT", 18);
 
         ethPool.configureAsset(address(borrowAsset), 0, 1e18);
         ethPool.setInterestRateModel(address(borrowAsset), address(interestRateModel));

@@ -1,0 +1,69 @@
+forge create --rpc-url https://sepolia.rpc.thirdweb.com \
+    --private-key <your_private_key> \
+    --etherscan-api-key <your_etherscan_api_key> \
+    --verify \
+    test/mocks/MockPriceOracle.sol:MockPriceOracle
+
+forge verify-contract \
+    --chain-id 11155111 \
+    --watch \
+    --etherscan-api-key <your_etherscan_api_key> \
+    0xA60654A5569a89630b270A581D81645417764682 \
+   test/mocks/MockPriceOracle.sol:MockPriceOracle
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+forge create --rpc-url https://sepolia.rpc.thirdweb.com \
+    --constructor-args "Test Wrapped Ether" "TWETH" 18 \
+    --private-key <your_private_key> \
+    --etherscan-api-key <your_etherscan_api_key> \
+    --verify \
+    test/mocks/MockERC20.sol:MockERC20
+
+
+forge verify-contract \
+    --chain-id 11155111 \
+    --constructor-args $(cast abi-encode "constructor(string,string,uint8)" "Test Wrapped Ether" "TWETH" 18) \
+    --watch \
+    --etherscan-api-key <your_etherscan_api_key> \
+    0x65d6a4ee7b2a807993b7014247428451aE11a471 \
+    test/mocks/MockERC20.sol:MockERC20  
+
+
+/////////////////////////////////
+/////////////////////////////////
+
+forge create --rpc-url https://sepolia.rpc.thirdweb.com \
+    --constructor-args "Test USDC" "TUSDC" 18 \
+    --private-key <your_private_key> \
+    --etherscan-api-key <your_etherscan_api_key> \
+    --verify \
+    test/mocks/MockERC20.sol:MockERC20
+
+forge verify-contract \
+    --chain-id 11155111 \
+    --constructor-args $(cast abi-encode "constructor(string,string,uint8)" "Test USDC" "TUSDC" 18) \
+    --watch \
+    --etherscan-api-key <your_etherscan_api_key> \
+    0x47d8BAC6C022CaC838f814A67e2d7A0344580D6D \
+    test/mocks/MockERC20.sol:MockERC20  
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+
+forge create --rpc-url https://sepolia.rpc.thirdweb.com \
+    --private-key <your_private_key> \
+    --etherscan-api-key <your_etherscan_api_key> \
+    --verify \
+    test/mocks/MockInterestRateModel.sol:MockInterestRateModel
+
+
+forge verify-contract \
+    --chain-id 11155111 \
+    --watch \
+    --etherscan-api-key <your_etherscan_api_key> \
+    0xD06A506eFB54bbFE13f7fc0De1e86717902EB59A \
+    test/mocks/MockInterestRateModel.sol:MockInterestRateModel

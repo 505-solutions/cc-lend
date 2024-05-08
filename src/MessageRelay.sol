@@ -12,7 +12,7 @@ import {Owned} from "solmate/auth/Owned.sol";
 import {EVMTransaction, IEVMTransactionVerification} from "./Interfaces/IEVMTransactionVerification.sol";
 import {ILendingPool} from "./Interfaces/ILendingPool.sol";
 
-contract LendingPool is Owned {
+contract MessageRelay is Owned {
     error InvalidProof(); // MerkleProof verification failed
     error TxAlreadyProcessed(); // Can't process the same tx twice
     error InvalidMessageType(); // Deposit, Withdraw, Borrow, Repay
@@ -86,6 +86,4 @@ contract LendingPool is Owned {
             revert InvalidMessageType();
         }
     }
-
-    
 }

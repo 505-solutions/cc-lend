@@ -42,8 +42,7 @@ contract ConfigurationTest is Test {
 
         interestRateModel = new MockInterestRateModel();
 
-        asset = new MockERC20();
-        asset.initialize("Test Token", "TEST", 18);
+        asset = new MockERC20("Mock Token", "MKT", 18);
 
         pool.configureAsset(address(asset), 0.5e18, 0);
         pool.setInterestRateModel(address(asset), address(interestRateModel));
@@ -52,8 +51,7 @@ contract ConfigurationTest is Test {
         oracle.updatePrice(address(asset), 1e18);
         pool.setOracle(address(oracle));
 
-        borrowAsset = new MockERC20();
-        borrowAsset.initialize("Borrow Test Token", "TBT", 18);
+        borrowAsset = new MockERC20("Mock Token", "MKT", 18);
 
         pool.configureAsset(address(borrowAsset), 0, 1e18);
         pool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
@@ -101,8 +99,7 @@ contract ConfigurationTest is Test {
 
     function testFailDepositAssetNotInPool() public {
         // Mock token.
-        MockERC20 mockAsset = new MockERC20();
-        mockAsset.initialize("Mock Token", "MKT", 18);
+        MockERC20 mockAsset = new MockERC20("Mock Token", "MKT", 18);
 
         // Mint tokens.
         mockAsset.mint(address(this), 1e18);
@@ -127,8 +124,7 @@ contract ConfigurationTest is Test {
 
     function testFailWithdrawAssetNotInPool() public {
         // Mock token.
-        MockERC20 mockAsset = new MockERC20();
-        mockAsset.initialize("Mock Token", "MKT", 18);
+        MockERC20 mockAsset = new MockERC20("Mock Token", "MKT", 18);
 
         // Mint tokens.
         testDeposit(1e18);
@@ -250,8 +246,7 @@ contract ConfigurationTest is Test {
 
     function testFailBorrowAssetNotInPool() public {
         // Mock token.
-        MockERC20 mockAsset = new MockERC20();
-        mockAsset.initialize("Mock Token", "MKT", 18);
+        MockERC20 mockAsset = new MockERC20("Mock Token", "MKT", 18);
 
         // Amount to mint.
         uint256 amount = 1e18;

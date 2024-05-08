@@ -2,10 +2,14 @@
 src = "src"
 out = "artifacts"
 libs = ["node_modules", "lib"]
-remappings = [
-    "eth-gas-reporter/=node_modules/eth-gas-reporter/",
-    "hardhat/=node_modules/hardhat/",
-    "solmate/=node_modules/solmate/",
-]
+
+
+[rpc_endpoints]
+sepolia = "${SEPOLIA_RPC_URL}"
+flare = "${FLARE_RPC_URL}"
+
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
