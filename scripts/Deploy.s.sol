@@ -42,38 +42,3 @@ contract DeployRelayScript is Script {
         return (relay);
     }
 }
-
-contract ConfigurePoolScript is Script {
-    function run() external returns (LendingPool) {
-        HelperConfig helperConfig = new HelperConfig();
-
-        (
-            address lendingPool,
-            address messageRelay,
-            address priceOracle,
-            address interesRateModel,
-            address weth,
-            address usdc,
-            uint256 deployerKey
-        ) = helperConfig.activeNetworkConfig();
-
-        LendingPool pool = LendingPool(lendingPool);
-
-        vm.startBroadcast(deployerKey);
-
-        pool.setOracle(priceOracle);
-
-        pool.configureAsset(weth, 0.5e18, 0);
-        pool.setInterestRateModel(weth, interesRateModel);
-
-        pool.configureAsset(usdc, 0.5e18, 0);
-        pool.setInterestRateModel(usdc, interesRateModel);
-
-        MockPriceOracle(priceOracle).updatePrice(weth, 1e18);
-        MockPriceOracle(priceOracle).updatePrice(usdc, 0.0003e18);
-
-        vm.stopBroadcast();
-
-        return (pool);
-    }
-}
