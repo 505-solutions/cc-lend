@@ -13,8 +13,6 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {Owned} from "solmate/auth/Owned.sol";
 
-import "forge-std/console.sol";
-
 abstract contract Configuration is MainStorage, Owned {
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
@@ -40,10 +38,12 @@ abstract contract Configuration is MainStorage, Owned {
 
     /// @notice Adds a new asset to the pool.
     /// @param asset The underlying asset.
+    /// @param counterpart The address of the asset on the other chain.
     /// @param lendFactor The lend factor for the asset.
     /// @param borrowFactor The borrow factor for the asset.
     function configureAsset(
         address asset,
+        address counterpart,
         uint256 lendFactor,
         uint256 borrowFactor // Configuration memory configuration
     ) external onlyOwner {
@@ -56,6 +56,8 @@ abstract contract Configuration is MainStorage, Owned {
 
         configurations[asset] = configuration;
         baseUnits[asset] = 10 ** IERC20(asset).decimals();
+
+        fromAssetCounterpart[counterpart] = asset;
 
         // Emit the event.
         emit AssetConfigured(asset, configuration);

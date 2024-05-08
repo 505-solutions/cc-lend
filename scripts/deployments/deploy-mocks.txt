@@ -67,3 +67,6 @@ forge verify-contract \
     --etherscan-api-key <your_etherscan_api_key> \
     0xD06A506eFB54bbFE13f7fc0De1e86717902EB59A \
     test/mocks/MockInterestRateModel.sol:MockInterestRateModel
+
+
+cast abi-encode "constructor(address,address)" 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56

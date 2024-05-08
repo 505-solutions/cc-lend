@@ -44,7 +44,7 @@ contract ConfigurationTest is Test {
 
         asset = new MockERC20("Mock Token", "MKT", 18);
 
-        pool.configureAsset(address(asset), 0.5e18, 0);
+        pool.configureAsset(address(asset), address(asset), 0.5e18, 0);
         pool.setInterestRateModel(address(asset), address(interestRateModel));
 
         oracle = new MockPriceOracle();
@@ -53,7 +53,7 @@ contract ConfigurationTest is Test {
 
         borrowAsset = new MockERC20("Mock Token", "MKT", 18);
 
-        pool.configureAsset(address(borrowAsset), 0, 1e18);
+        pool.configureAsset(address(borrowAsset), address(borrowAsset), 0, 1e18);
         pool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
 
         // liquidator = new MockLiquidator(pool, PriceOracle(address(oracle)));

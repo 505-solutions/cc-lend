@@ -11,8 +11,6 @@ import {Configuration} from "./Configuration.sol";
 import {SafeCastLib} from "solmate/utils/SafeCastLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-import "forge-std/console.sol";
-
 abstract contract Accounting is Configuration, InternalPriceOracle {
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
@@ -75,7 +73,6 @@ abstract contract Accounting is Configuration, InternalPriceOracle {
     function borrowBalance(address asset, address user) public view returns (uint256) {
         // Multiply the user's internal debt units by the internal debt exchange rate of the asset.
         return internalDebt[asset][user].mulDivDown(internalDebtExchangeRate(asset), baseUnits[asset]);
-
     }
 
     /// @dev Returns the exchange rate between underlying tokens and internal debt units.

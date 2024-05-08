@@ -35,6 +35,9 @@ abstract contract MainStorage {
     /// 10**asset.decimals().
     mapping(address => uint256) public baseUnits;
 
+    /// @notice Maps counter assets from chainB to their address on chainA
+    mapping(address => address) public fromAssetCounterpart;
+
     /// @notice Emitted when a new asset is added to the pool.
     /// @param asset The underlying asset.
     /// @param configuration The lend/borrow factors for the asset.
