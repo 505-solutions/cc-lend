@@ -54,7 +54,7 @@ contract HelperConfig is Script {
 
     function getFlareConfig() public view returns (NetworkConfig memory flareNetworkConfig) {
         flareNetworkConfig = NetworkConfig({
-            lendingPool: 0x595EE29025Ba54E4f4031DaA89cc6DEed942e053,
+            lendingPool: 0x13e69cf4376844EBdd6CADF5D6EFEe6B17864Efa,
             messageRelay: 0xa80ea62d1f5bBD985d20e18FA0bb46EE75A8a8d8,
             priceOracle: 0x9bc96047C57154B455d68aFbc0c5e6Fed573184B, // ETH / USD
             interesRateModel: 0x4FbFF7A75A97E02a168526464968A591e5Ec77c1,

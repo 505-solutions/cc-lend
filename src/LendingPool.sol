@@ -11,8 +11,6 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {Owned} from "solmate/auth/Owned.sol";
 
-import "forge-std/console.sol";
-
 contract LendingPool is Accounting {
     using SafeTransferLib for IERC20;
     using SafeCastLib for uint256;
@@ -58,8 +56,6 @@ contract LendingPool is Accounting {
         onlyMessageRelay
     {
         address asset = fromAssetCounterpart[counterpartAsset];
-
-        console.log("asset: ", asset);
 
         _deposit(asset, amount, depositor, enable);
     }
