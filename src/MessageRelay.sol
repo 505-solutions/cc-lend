@@ -12,7 +12,6 @@ import {Owned} from "solmate/auth/Owned.sol";
 import {EVMTransaction, IEVMTransactionVerification} from "./Interfaces/IEVMTransactionVerification.sol";
 import {ILendingPool} from "./Interfaces/ILendingPool.sol";
 
-import "forge-std/console.sol";
 
 contract MessageRelay is Owned {
     error InvalidProof(); // MerkleProof verification failed
