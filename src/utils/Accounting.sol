@@ -47,6 +47,8 @@ abstract contract Accounting is Configuration, InternalPriceOracle {
     function balanceOf(address asset, address user) public view returns (uint256) {
         // Multiply the user's internal balance units by the internal exchange rate of the asset.
 
+        if (internalBalances[asset][user] == 0) return 0;
+
         return internalBalances[asset][user].mulDivDown(internalBalanceExchangeRate(asset), baseUnits[asset]);
     }
 
@@ -195,7 +197,7 @@ abstract contract Accounting is Configuration, InternalPriceOracle {
     /// @param asset The underlying asset.
     /// @param user The user to check.
     /// @param amount The amount of underlying to borrow.
-    function canBorrow(address asset, address user, uint256 amount) internal view returns (bool) {
+    function canBorrow(address asset, address user, uint256 amount) public view returns (bool) {
         // Ensure the user's health factor will be greater than 1.
 
         return calculateHealthFactor(asset, user, amount) >= 1e18;
