@@ -12,9 +12,11 @@ import {LendingPool} from "src/LendingPool.sol";
 
 import {PriceOracle} from "src/Interfaces/IPriceOracle.sol";
 import {InterestRateModel} from "src/Interfaces/IIRM.sol";
+import {PriceOraclePlugin} from "src/PriceOraclePlugin.sol";
 
 import {MockERC20} from "./mocks/MockERC20.sol";
 import {MockPriceOracle} from "./mocks/MockPriceOracle.sol";
+import {MockFtsoRegistry} from "./mocks/MockFtsoRegistry.sol";
 import {MockInterestRateModel} from "./mocks/MockInterestRateModel.sol";
 // import {MockLiquidator} from "./mocks/MockLiquidator.sol";
 
@@ -23,74 +25,100 @@ import {LendingPool} from "src/LendingPool.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 /// @title Configuration Test Contract
-contract ConfigurationTest is Test {
+contract InteractionsTest is Test {
     using FixedPointMathLib for uint256;
 
     /* Lending Pool Contracts */
     LendingPool pool;
 
     /* Mocks */
-    MockERC20 asset;
-    MockERC20 borrowAsset;
+    MockERC20 testEth;
+    MockERC20 testUsdc;
 
     MockPriceOracle oracle;
+    MockFtsoRegistry ftsoRegistry;
+
     MockInterestRateModel interestRateModel;
     // MockLiquidator liquidator;
 
+    PriceOraclePlugin priceOraclePlugin;
+
+    uint256 constant ETH_FTSO_IDX = 10;
+    uint256 constant ETH_FTSO_DECIMALS = 5;
+    uint256 constant USDC_FTSO_IDX = 25;
+    uint256 constant USDC_FTSO_DECIMALS = 5;
+
     function setUp() public {
-        pool = new LendingPool(address(this), address(this));
+        pool = new LendingPool();
+        pool.initialize(address(this), address(this));
 
         interestRateModel = new MockInterestRateModel();
 
-        asset = new MockERC20("Mock Token", "MKT", 18);
+        testEth = new MockERC20("Mock ETH", "MKE", 18);
 
-        pool.configureAsset(address(asset), address(asset), 0.5e18, 0);
-        pool.setInterestRateModel(address(asset), address(interestRateModel));
+        pool.configureAsset(address(testEth), address(testEth), 0.5e18, 0);
+        pool.setInterestRateModel(address(testEth), address(interestRateModel));
 
-        oracle = new MockPriceOracle();
-        oracle.updatePrice(address(asset), 1e18);
-        pool.setOracle(address(oracle));
+        testUsdc = new MockERC20("Mock USDC", "MKU", 18);
 
-        borrowAsset = new MockERC20("Mock Token", "MKT", 18);
+        pool.configureAsset(address(testUsdc), address(testUsdc), 0, 1e18);
+        pool.setInterestRateModel(address(testUsdc), address(interestRateModel));
 
-        pool.configureAsset(address(borrowAsset), address(borrowAsset), 0, 1e18);
-        pool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
+        // * ORACLE CONFIGURATIONS
+        priceOraclePlugin = new PriceOraclePlugin(address(testEth), ETH_FTSO_IDX);
 
-        // liquidator = new MockLiquidator(pool, PriceOracle(address(oracle)));
+        pool.setPriceOraclePlugin(address(priceOraclePlugin));
+
+        if (block.chainid != 16) {
+            // ! If on Sepolia
+            oracle = new MockPriceOracle();
+            oracle.updatePrice(address(testEth), 1e18);
+            priceOraclePlugin.setOracleSource(address(oracle));
+        } else {
+            // ! If on Flare
+            priceOraclePlugin.setFtsoIndex(address(testEth), ETH_FTSO_IDX);
+            priceOraclePlugin.setFtsoIndex(address(testUsdc), USDC_FTSO_IDX);
+
+            ftsoRegistry = new MockFtsoRegistry();
+            ftsoRegistry.updatePrice(ETH_FTSO_IDX, 3000e5, ETH_FTSO_DECIMALS);
+            ftsoRegistry.updatePrice(USDC_FTSO_IDX, 1e5, USDC_FTSO_DECIMALS);
+
+            priceOraclePlugin.setOracleSource(address(ftsoRegistry));
+        }
     }
 
     function testDeposit(uint256 amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e27);
 
-        // Mint, approve, and deposit the asset.
-        mintAndApprove(asset, amount);
+        // Mint, approve, and deposit the testEth.
+        mintAndApprove(testEth, amount);
 
-        uint256 userBalance = asset.balanceOf(address(this));
-        uint256 poolBalance = asset.balanceOf(address(pool));
+        uint256 userBalance = testEth.balanceOf(address(this));
+        uint256 poolBalance = testEth.balanceOf(address(pool));
 
-        pool.deposit(address(asset), amount, false);
+        pool.deposit(address(testEth), amount, false);
 
-        uint256 userBalance2 = asset.balanceOf(address(this));
-        uint256 poolBalance2 = asset.balanceOf(address(pool));
+        uint256 userBalance2 = testEth.balanceOf(address(this));
+        uint256 poolBalance2 = testEth.balanceOf(address(pool));
 
         // Checks. Note that the default exchange rate is 1,
         // so the values should be equal to the input amount.
-        assertEq(pool.balanceOf(address(asset), address(this)), amount, "Incorrect Balance");
-        assertEq(pool.totalUnderlying(address(asset)), amount, "Incorrect Total Underlying");
+        assertEq(pool.balanceOf(address(testEth), address(this)), amount, "Incorrect Balance");
+        assertEq(pool.totalUnderlying(address(testEth)), amount, "Incorrect Total Underlying");
     }
 
     function testWithdrawal(uint256 amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e27);
 
-        // Mint, approve, and deposit the asset.
+        // Mint, approve, and deposit the testEth.
         testDeposit(amount);
 
-        // Withdraw the asset.
-        pool.withdraw(address(asset), amount, false);
+        // Withdraw the testEth.
+        pool.withdraw(address(testEth), amount, false);
 
         // Checks.
-        assertEq(asset.balanceOf(address(this)), amount, "Incorrect asset balance");
-        assertEq(pool.balanceOf(address(asset), address(this)), 0, "Incorrect pool balance");
+        assertEq(testEth.balanceOf(address(this)), amount, "Incorrect testEth balance");
+        assertEq(pool.balanceOf(address(testEth), address(this)), 0, "Incorrect pool balance");
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -113,13 +141,13 @@ contract ConfigurationTest is Test {
 
     function testFailDepositWithNotEnoughApproval() public {
         // Mint tokens.
-        asset.mint(address(this), 1e18);
+        testEth.mint(address(this), 1e18);
 
         // Approve the pool to spend half of the tokens.
-        asset.approve(address(pool), 0.5e18);
+        testEth.approve(address(pool), 0.5e18);
 
         // Attempt to deposit the tokens.
-        pool.deposit(address(asset), 1e18, false);
+        pool.deposit(address(testEth), 1e18, false);
     }
 
     function testFailWithdrawAssetNotInPool() public {
@@ -138,17 +166,17 @@ contract ConfigurationTest is Test {
         testDeposit(1e18);
 
         // Attempt to withdraw the tokens.
-        pool.withdraw(address(asset), 2e18, false);
+        pool.withdraw(address(testEth), 2e18, false);
     }
 
     function testFailWithdrawWithNoBalance() public {
         // Attempt to withdraw tokens.
-        pool.withdraw(address(asset), 1e18, false);
+        pool.withdraw(address(testEth), 1e18, false);
     }
 
     function testFailWithNoApproval() public {
         // Attempt to deposit tokens.
-        pool.deposit(address(asset), 1e18, false);
+        pool.deposit(address(testEth), 1e18, false);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -156,22 +184,22 @@ contract ConfigurationTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function testEnableCollateral() public {
-        // Enable asset as collateral.
-        pool.enableAsset(address(asset));
+        // Enable testEth as collateral.
+        pool.enableAsset(address(testEth));
 
         // Checks.
-        assertTrue(pool.enabledCollateral(address(this), address(asset)));
+        assertTrue(pool.enabledCollateral(address(this), address(testEth)));
     }
 
     function testDisableCollateral() external {
-        // Enable the asset as collateral.
+        // Enable the testEth as collateral.
         testEnableCollateral();
 
-        // Disable the asset as collateral.
-        pool.disableAsset(address(asset));
+        // Disable the testEth as collateral.
+        pool.disableAsset(address(testEth));
 
         // Checks.
-        assertFalse(pool.enabledCollateral(address(this), address(asset)));
+        assertFalse(pool.enabledCollateral(address(this), address(testEth)));
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -182,59 +210,59 @@ contract ConfigurationTest is Test {
         vm.assume(amount >= 1e5 && amount <= 1e27);
 
         // Deposit tokens and enable them as collateral.
-        mintAndApprove(asset, amount);
-        pool.deposit(address(asset), amount, true);
+        mintAndApprove(testEth, amount);
+        pool.deposit(address(testEth), amount, true);
 
         // Mint borrow tokens and supply them to the pool.
-        mintAndApprove(borrowAsset, amount / 4);
-        pool.deposit(address(borrowAsset), amount / 4, false);
+        mintAndApprove(testUsdc, amount / 4);
+        pool.deposit(address(testUsdc), amount / 4, false);
 
         // Set the price of collateral to 1 ETH.
-        oracle.updatePrice(address(asset), 1e18);
+        updateOraclePrices(address(testEth), 1e18);
 
-        // Set the price of the borrow asset to 2 ETH.
+        // Set the price of the borrow testEth to 2 ETH.
         // This means that with a 0.5 lend factor, we should be able to borrow 0.25 ETH.
-        oracle.updatePrice(address(borrowAsset), 2e18);
+        updateOraclePrices(address(testUsdc), 2e18);
 
-        // Borrow the asset.
-        pool.borrow(address(borrowAsset), amount / 4);
+        // Borrow the testEth.
+        pool.borrow(address(testUsdc), amount / 4);
 
         // Checks.
-        assertEq(borrowAsset.balanceOf(address(this)), amount / 4);
-        assertEq(pool.borrowBalance(address(borrowAsset), address(this)), amount / 4);
-        assertEq(pool.totalBorrows(address(borrowAsset)), amount / 4);
-        assertEq(pool.totalUnderlying(address(borrowAsset)), amount / 4);
+        assertEq(testUsdc.balanceOf(address(this)), amount / 4);
+        assertEq(pool.borrowBalance(address(testUsdc), address(this)), amount / 4);
+        assertEq(pool.totalBorrows(address(testUsdc)), amount / 4);
+        assertEq(pool.totalUnderlying(address(testUsdc)), amount / 4);
     }
 
-    function testBorrow2() public {
-        // vm.assume(amount >= 1e5 && amount <= 1e27);
+    function testBorrow2(uint256 amount) public {
+        vm.assume(amount >= 1e5 && amount <= 1e27);
 
         uint256 amount = 1 ether;
         uint256 borrowAmount = 1200 ether;
 
         // Deposit tokens and enable them as collateral.
-        mintAndApprove(asset, amount);
-        pool.deposit(address(asset), amount, true);
+        mintAndApprove(testEth, amount);
+        pool.deposit(address(testEth), amount, true);
 
         // Mint borrow tokens and supply them to the pool.
-        mintAndApprove(borrowAsset, borrowAmount);
-        pool.deposit(address(borrowAsset), borrowAmount, false);
+        mintAndApprove(testUsdc, borrowAmount);
+        pool.deposit(address(testUsdc), borrowAmount, false);
 
         // Set the price of collateral to 1 ETH.
-        oracle.updatePrice(address(asset), 1e18);
+        updateOraclePrices(address(testEth), 1e18);
 
-        oracle.updatePrice(address(borrowAsset), 0.0003 ether);
+        updateOraclePrices(address(testUsdc), 0.0003 ether);
 
-        // Borrow the asset.
-        pool.borrow(address(borrowAsset), borrowAmount);
+        // Borrow the testEth.
+        pool.borrow(address(testUsdc), borrowAmount);
 
-        console.log(pool.totalBorrows(address(borrowAsset)));
+        console.log(pool.totalBorrows(address(testUsdc)));
 
         // Checks.
-        assertEq(borrowAsset.balanceOf(address(this)), borrowAmount);
-        assertEq(pool.borrowBalance(address(borrowAsset), address(this)), borrowAmount);
-        assertEq(pool.totalBorrows(address(borrowAsset)), borrowAmount);
-        assertEq(pool.totalUnderlying(address(borrowAsset)), borrowAmount);
+        assertEq(testUsdc.balanceOf(address(this)), borrowAmount);
+        assertEq(pool.borrowBalance(address(testUsdc), address(this)), borrowAmount);
+        assertEq(pool.totalBorrows(address(testUsdc)), borrowAmount);
+        assertEq(pool.totalUnderlying(address(testUsdc)), borrowAmount);
     }
 
     function testRepay(uint256 amount) public {
@@ -244,8 +272,8 @@ contract ConfigurationTest is Test {
         testBorrow(amount);
 
         // Repay the tokens.
-        borrowAsset.approve(address(pool), amount / 4);
-        pool.repay(address(borrowAsset), amount / 4);
+        testUsdc.approve(address(pool), amount / 4);
+        pool.repay(address(testUsdc), amount / 4);
     }
 
     function testInterestAccrual() public {
@@ -265,10 +293,10 @@ contract ConfigurationTest is Test {
         uint256 expected = (amount / 4).mulWadDown(uint256(interestRateModel.getBorrowRate(0, 0, 0)).rpow(5, 1e18));
 
         // Checks.
-        assertEq(pool.borrowBalance(address(borrowAsset), address(this)), expected);
-        assertEq(pool.totalBorrows(address(borrowAsset)), expected);
-        assertEq(pool.totalUnderlying(address(borrowAsset)), expected);
-        assertEq(pool.balanceOf(address(borrowAsset), address(this)), expected);
+        assertEq(pool.borrowBalance(address(testUsdc), address(this)), expected);
+        assertEq(pool.totalBorrows(address(testUsdc)), expected);
+        assertEq(pool.totalUnderlying(address(testUsdc)), expected);
+        assertEq(pool.balanceOf(address(testUsdc), address(this)), expected);
     }
 
     // /*///////////////////////////////////////////////////////////////
@@ -283,21 +311,21 @@ contract ConfigurationTest is Test {
         uint256 amount = 1e18;
 
         // Deposit tokens and enable them as collateral.
-        mintAndApprove(asset, amount);
-        pool.deposit(address(asset), amount, true);
+        mintAndApprove(testEth, amount);
+        pool.deposit(address(testEth), amount, true);
 
         // Mint borrow tokens and supply them to the pool.
-        mintAndApprove(borrowAsset, amount / 4);
-        pool.deposit(address(borrowAsset), amount / 4, false);
+        mintAndApprove(testUsdc, amount / 4);
+        pool.deposit(address(testUsdc), amount / 4, false);
 
         // Set the price of collateral to 1 ETH.
-        oracle.updatePrice(address(asset), 1e18);
+        updateOraclePrices(address(testEth), 1e18);
 
-        // Set the price of the borrow asset to 2 ETH.
+        // Set the price of the borrow testEth to 2 ETH.
         // This means that with a 0.5 lend factor, we should be able to borrow 0.25 ETH.
-        oracle.updatePrice(address(borrowAsset), 2e18);
+        updateOraclePrices(address(testUsdc), 2e18);
 
-        // Borrow the asset.
+        // Borrow the testEth.
         pool.borrow(address(mockAsset), amount / 4);
     }
 
@@ -305,73 +333,73 @@ contract ConfigurationTest is Test {
         vm.assume(amount >= 1e5 && amount <= 1e27);
 
         // Deposit tokens and enable them as collateral.
-        mintAndApprove(asset, amount);
-        pool.deposit(address(asset), amount, false);
+        mintAndApprove(testEth, amount);
+        pool.deposit(address(testEth), amount, false);
 
         // Mint borrow tokens and supply them to the pool.
-        mintAndApprove(borrowAsset, amount / 2);
-        pool.deposit(address(borrowAsset), amount / 2, false);
+        mintAndApprove(testUsdc, amount / 2);
+        pool.deposit(address(testUsdc), amount / 2, false);
 
         // Set the price of collateral to 1 ETH.
-        oracle.updatePrice(address(asset), 1e18);
+        updateOraclePrices(address(testEth), 1e18);
 
-        // Set the price of the borrow asset to 2 ETH.
+        // Set the price of the borrow testEth to 2 ETH.
         // This means that with a 0.5 lend factor, we should be able to borrow 0.25 ETH.
-        oracle.updatePrice(address(borrowAsset), 2e18);
+        updateOraclePrices(address(testUsdc), 2e18);
 
-        // Borrow the asset.
-        pool.borrow(address(borrowAsset), amount / 4);
+        // Borrow the testEth.
+        pool.borrow(address(testUsdc), amount / 4);
     }
 
     function testFailBorrowWithNoCollateral(uint256 amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e27);
 
         // Mint borrow tokens and supply them to the pool.
-        mintAndApprove(borrowAsset, amount);
-        pool.deposit(address(borrowAsset), amount, false);
+        mintAndApprove(testUsdc, amount);
+        pool.deposit(address(testUsdc), amount, false);
 
         // Set the price of collateral to 1 ETH.
-        oracle.updatePrice(address(asset), 1e18);
+        updateOraclePrices(address(testEth), 1e18);
 
-        // Set the price of the borrow asset to 2 ETH.
+        // Set the price of the borrow testEth to 2 ETH.
         // This means that with a 0.5 lend factor, we should be able to borrow 0.25 ETH.
-        oracle.updatePrice(address(borrowAsset), 2e18);
+        updateOraclePrices(address(testUsdc), 2e18);
 
-        // Borrow the asset.
-        pool.borrow(address(borrowAsset), amount);
+        // Borrow the testEth.
+        pool.borrow(address(testUsdc), amount);
     }
 
     function testFailBorrowWithNotEnoughCollateral(uint256 amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e27);
 
         // Deposit tokens and enable them as collateral.
-        mintAndApprove(asset, amount);
-        pool.deposit(address(asset), amount, true);
+        mintAndApprove(testEth, amount);
+        pool.deposit(address(testEth), amount, true);
 
         // Mint borrow tokens and supply them to the pool.
-        mintAndApprove(borrowAsset, amount / 2);
-        pool.deposit(address(borrowAsset), amount / 2, false);
+        mintAndApprove(testUsdc, amount / 2);
+        pool.deposit(address(testUsdc), amount / 2, false);
 
         // Set the price of collateral to 1 ETH.
-        oracle.updatePrice(address(asset), 1e18);
+        updateOraclePrices(address(testEth), 1e18);
 
-        // Set the price of the borrow asset to 2 ETH.
+        // Set the price of the borrow testEth to 2 ETH.
         // This means that with a 0.5 lend factor, we should be able to borrow 0.25 ETH.
-        oracle.updatePrice(address(borrowAsset), 2e18);
+        updateOraclePrices(address(testUsdc), 2e18);
 
-        // Borrow the asset.
-        pool.borrow(address(borrowAsset), amount / 2);
+        // Borrow the testEth.
+        pool.borrow(address(testUsdc), amount / 2);
     }
 
     function testCannotDisableIfBeingBorrowed() public {
-        // Borrow asset.
+        // Borrow testEth.
         testBorrow(1e18);
 
-        // Attempt to disable the asset as collateral.
-        pool.disableAsset(address(borrowAsset));
+        // Attempt to disable the testEth as collateral.
+        pool.disableAsset(address(testUsdc));
 
         // Checks.
-        assertTrue(pool.enabledCollateral(address(this), address(borrowAsset)));
+        assertTrue(pool.enabledCollateral(address(this), address(testUsdc)));
     }
 
     // UTILS ================================================================
@@ -380,6 +408,18 @@ contract ConfigurationTest is Test {
         underlying.mint(address(this), amount);
         underlying.approve(address(pool), amount);
 
-        uint256 userBalance = asset.balanceOf(address(this));
+        uint256 userBalance = testEth.balanceOf(address(this));
+    }
+
+    function updateOraclePrices(address _asset, uint256 price) private {
+        if (block.chainid != 16) {
+            oracle.updatePrice(_asset, price);
+        } else {
+            if (_asset == address(testEth)) {
+                ftsoRegistry.updatePrice(ETH_FTSO_IDX, price / 10 ** (18 - ETH_FTSO_DECIMALS), ETH_FTSO_DECIMALS);
+            } else if (_asset == address(testUsdc)) {
+                ftsoRegistry.updatePrice(USDC_FTSO_IDX, price / 10 ** (18 - USDC_FTSO_DECIMALS), USDC_FTSO_DECIMALS);
+            }
+        }
     }
 }

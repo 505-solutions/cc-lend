@@ -12,16 +12,21 @@ import {MockPriceOracle} from "../test/mocks/MockPriceOracle.sol";
 // import {ILendingPool} from "../src/Interfaces/ILendingPool.sol";
 import {EVMTransaction} from "src/Interfaces/IEVMTransactionVerification.sol";
 
+import {PriceOraclePlugin} from "src/PriceOraclePlugin.sol";
+
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract ConfigurePoolScript is Script {
+    uint256 constant ETH_FTSO_IDX = 10;
+
     function run() external returns (LendingPool) {
         HelperConfig helperConfig = new HelperConfig();
 
         (
             address lendingPool,
             address messageRelay,
-            address priceOracle,
+            address sourceOracle,
+            address _priceOraclePlugin,
             address interesRateModel,
             address weth,
             address usdc,
@@ -31,10 +36,9 @@ contract ConfigurePoolScript is Script {
         (address counterWeth, address counterUsdc) = helperConfig.activeCounterAssets();
 
         LendingPool pool = LendingPool(lendingPool);
+        PriceOraclePlugin priceOraclePlugin = PriceOraclePlugin(_priceOraclePlugin);
 
         vm.startBroadcast(deployerKey);
-
-        pool.setOracle(priceOracle);
 
         pool.configureAsset(weth, counterWeth, 0.9e18, 0.9e18);
         pool.setInterestRateModel(weth, interesRateModel);
@@ -42,8 +46,16 @@ contract ConfigurePoolScript is Script {
         pool.configureAsset(usdc, counterUsdc, 0.9e18, 0.9e18);
         pool.setInterestRateModel(usdc, interesRateModel);
 
-        MockPriceOracle(priceOracle).updatePrice(weth, 1e18);
-        MockPriceOracle(priceOracle).updatePrice(usdc, 0.0003e18);
+        // * ORACLE CONFIGURATIONS
+        pool.setPriceOraclePlugin(address(priceOraclePlugin));
+
+        priceOraclePlugin.setFtsoIndex(weth, ETH_FTSO_IDX);
+        priceOraclePlugin.setOracleSource(sourceOracle);
+
+        if (block.chainid != 16) {
+            MockPriceOracle(sourceOracle).updatePrice(weth, 1e18);
+            MockPriceOracle(sourceOracle).updatePrice(usdc, 0.0003e18);
+        }
 
         vm.stopBroadcast();
 
@@ -55,7 +67,8 @@ contract UpdateConfigurationPoolScript is Script {
     function run() external returns (LendingPool) {
         HelperConfig helperConfig = new HelperConfig();
 
-        (address lendingPool,,,, address weth, address usdc, uint256 deployerKey) = helperConfig.activeNetworkConfig();
+        (address lendingPool,,,, address interesRateModel, address weth, address usdc, uint256 deployerKey) =
+            helperConfig.activeNetworkConfig();
 
         LendingPool pool = LendingPool(lendingPool);
 
@@ -64,8 +77,10 @@ contract UpdateConfigurationPoolScript is Script {
         MainStorage.Configuration memory newConfiguration = MainStorage.Configuration(0.9e18, 0.9e18);
 
         pool.updateConfiguration(weth, newConfiguration);
+        pool.setInterestRateModel(weth, interesRateModel);
 
         pool.updateConfiguration(usdc, newConfiguration);
+        pool.setInterestRateModel(usdc, interesRateModel);
 
         vm.stopBroadcast();
 
@@ -77,7 +92,7 @@ contract ConfigureRelayScript is Script {
     function run() external returns (LendingPool) {
         HelperConfig helperConfig = new HelperConfig();
 
-        (address lendingPool, address messageRelay,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
+        (address lendingPool, address messageRelay,,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
 
         address evmTxVerifier = helperConfig.getEvmTxVerifier();
 
@@ -101,7 +116,7 @@ contract VerifyProofScript is Script {
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
 
-        (address lendingPool, address messageRelay,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
+        (address lendingPool, address messageRelay,,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
 
         MessageRelay relay = MessageRelay(messageRelay);
 

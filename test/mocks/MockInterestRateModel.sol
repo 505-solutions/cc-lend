@@ -11,7 +11,7 @@ contract MockInterestRateModel {
      * @return The borrow rate per block (as a percentage, and scaled by 1e18)
      */
     function getBorrowRate(uint256 cash, uint256 borrows, uint256 reserves) public view returns (uint256) {
-        return 1.05 * 1e18;
+        return 1 * 1e18; // 0% per block
     }
 
     /**

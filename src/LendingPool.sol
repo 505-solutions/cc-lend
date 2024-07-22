@@ -11,16 +11,31 @@ import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import {Owned} from "solmate/auth/Owned.sol";
 
-contract LendingPool is Accounting {
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+
+
+contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
     using SafeTransferLib for IERC20;
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
 
     // TODO: Make everything non-reentrant
 
-    constructor(address owner, address messageRelay) Owned(owner) {
+    // constructor(address owner, address messageRelay) Owned(owner) {
+    //     s_messageRelay = messageRelay;
+    // }
+
+    function initialize(address initialOwner, address messageRelay) public initializer {
+        __Ownable_init(initialOwner);
+        __UUPSUpgradeable_init();
+
         s_messageRelay = messageRelay;
     }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     /*///////////////////////////////////////////////////////////////
                        DEPOSIT/WITHDRAW INTERFACE
@@ -173,7 +188,7 @@ contract LendingPool is Accounting {
         enableAsset(asset);
 
         // Ensure the caller is able to execute this borrow.
-        require(canBorrow(asset, depositor, amount));
+        require(canBorrow(asset, depositor, amount), "USER BORROW LIMIT EXCEEDED");
 
         // Calculate the amount of internal debt units to be stored.
         uint256 debtUnits = amount.mulDivDown(baseUnits[asset], internalDebtExchangeRate(asset));
@@ -224,6 +239,7 @@ contract LendingPool is Accounting {
 
         // Calculate the amount of internal debt units to be stored.
         uint256 debtUnits = amount.mulDivDown(baseUnits[asset], internalDebtExchangeRate(asset));
+
 
         // Update the internal borrow balance of the borrower.
         internalDebt[asset][depositor] -= debtUnits;

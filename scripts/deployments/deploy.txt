@@ -6,6 +6,32 @@ forge create --rpc-url https://sepolia.rpc.thirdweb.com \
     src/LendingPool.sol:LendingPool
 
 
+forge create --rpc-url https://sepolia.rpc.thirdweb.com \
+    --constructor-args 0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14 AIStrategy AIS \
+     0x1238536071E1c677A632429e3655c799b22cDA52 0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E \
+     0xF26585263D5C18750870314e7Cf16fE2ED3c0A90 \
+     '[7455504813211,2953758299944270168064,1838876263346026577920]' \
+     '[1729926753534472704,262951735771738,0]' \
+     --private-key 0xe430797523a3a7dabdbb2623b8eee0ca1343ffa5684c59ceedcff0f10a3e957b \
+     src/AIStrategy.sol:AIStrategy
+
+ forge verify-contract \
+        --chain-id 11155111 \
+        --watch \
+        --constructor-args $(cast abi-encode "constructor(address,string,string,address,address,address,uint256[3],uint256[3])" \
+            0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14 \
+            AIStrategy \
+            AIS \
+            0x1238536071E1c677A632429e3655c799b22cDA52 \
+            0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E \
+            0xF26585263D5C18750870314e7Cf16fE2ED3c0A90 \
+            '[7455504813211,2953758299944270168064,1838876263346026577920]' \
+            '[1729926753534472704,262951735771738,0]' \
+        ) \
+        --etherscan-api-key N8SP1UH648EFP6486Y2KZA8DYQPU3Y7RRM \
+        0x56Bc15B5648db1CC68dDac667C50Eba24a1e6Ee6 \
+        src/AIStrategy.sol:AIStrategy
+
 
 forge verify-contract \
     --chain-id 11155111 \
@@ -28,7 +54,7 @@ forge verify-contract \
     --verifier blockscout \
     --constructor-args $(cast abi-encode "constructor(address,address)" 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56) \
     --verifier-url https://coston-explorer.flare.network/api \
-    0x13e69cf4376844EBdd6CADF5D6EFEe6B17864Efa \
+    0x854e686676cd1839B4b606e08E0d9F3aba2fed3d \
     src/LendingPool.sol:LendingPool
 
 

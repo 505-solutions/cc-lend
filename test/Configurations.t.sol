@@ -13,8 +13,10 @@ import {LendingPool} from "src/LendingPool.sol";
 import {PriceOracle} from "src/Interfaces/IPriceOracle.sol";
 import {InterestRateModel} from "src/Interfaces/IIRM.sol";
 
+import {PriceOraclePlugin} from "src/PriceOraclePlugin.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 import {MockPriceOracle} from "./mocks/MockPriceOracle.sol";
+import {MockFtsoRegistry} from "./mocks/MockFtsoRegistry.sol";
 import {MockInterestRateModel} from "./mocks/MockInterestRateModel.sol";
 // import {MockLiquidator} from "./mocks/MockLiquidator.sol";
 
@@ -34,11 +36,21 @@ contract ConfigurationTest is Test {
     MockERC20 borrowAsset;
 
     MockPriceOracle oracle;
+    MockFtsoRegistry ftsoRegistry;
     MockInterestRateModel interestRateModel;
     // MockLiquidator liquidator;
 
+    PriceOraclePlugin priceOraclePlugin;
+
+    uint256 constant ETH_FTSO_IDX = 1e18;
+
     function setUp() public {
-        pool = new LendingPool(address(this), address(this));
+        // ! For non upgradable contracts
+        // pool = new LendingPool(address(this), address(this));
+
+        // ! For upgradable contracts
+        pool = new LendingPool();
+        pool.initialize(address(this), address(this));
 
         interestRateModel = new MockInterestRateModel();
 
@@ -47,14 +59,31 @@ contract ConfigurationTest is Test {
         pool.configureAsset(address(asset), address(asset), 0.5e18, 0);
         pool.setInterestRateModel(address(asset), address(interestRateModel));
 
-        oracle = new MockPriceOracle();
-        oracle.updatePrice(address(asset), 1e18);
-        pool.setOracle(address(oracle));
-
         borrowAsset = new MockERC20("Mock Token", "MKT", 18);
 
         pool.configureAsset(address(borrowAsset), address(borrowAsset), 0, 1e18);
         pool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
+
+        // * ORACLE CONFIGURATIONS
+        priceOraclePlugin = new PriceOraclePlugin(address(asset), ETH_FTSO_IDX);
+        priceOraclePlugin.setOracleSource(address(this));
+
+        pool.setPriceOraclePlugin(address(priceOraclePlugin));
+
+        if (block.chainid != 16) {
+            // ! If on Sepolia
+            oracle = new MockPriceOracle();
+            oracle.updatePrice(address(asset), 1e18);
+            priceOraclePlugin.setOracleSource(address(oracle));
+        } else {
+            // ! If on Flare
+            priceOraclePlugin.setFtsoIndex(address(asset), ETH_FTSO_IDX);
+
+            ftsoRegistry = new MockFtsoRegistry();
+            ftsoRegistry.updatePrice(ETH_FTSO_IDX, 3000e5, 5);
+
+            priceOraclePlugin.setOracleSource(address(ftsoRegistry));
+        }
 
         // liquidator = new MockLiquidator(pool, PriceOracle(address(oracle)));
     }
@@ -63,8 +92,8 @@ contract ConfigurationTest is Test {
                         ORACLE CONFIGURATION TESTS
     //////////////////////////////////////////////////////////////*/
 
-    function testOracleConfiguration() public {
-        assertEq(address(PriceOracle(pool.oracle())), address(oracle));
+    function testOracleConfiguration() public view {
+        assertEq(address(pool.priceOraclePlugin()), address(priceOraclePlugin));
     }
 
     // function testNewOracleConfiguration() public {

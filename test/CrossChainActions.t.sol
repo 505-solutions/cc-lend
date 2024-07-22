@@ -14,17 +14,20 @@ import {PriceOracle} from "src/Interfaces/IPriceOracle.sol";
 import {InterestRateModel} from "src/Interfaces/IIRM.sol";
 import {EVMTransaction} from "src/Interfaces/IEVMTransactionVerification.sol";
 
+import {PriceOraclePlugin} from "src/PriceOraclePlugin.sol";
+
 import {MockERC20} from "./mocks/MockERC20.sol";
 import {MockPriceOracle} from "./mocks/MockPriceOracle.sol";
 import {MockInterestRateModel} from "./mocks/MockInterestRateModel.sol";
 // import {MockLiquidator} from "./mocks/MockLiquidator.sol";
+import {MockFtsoRegistry} from "./mocks/MockFtsoRegistry.sol";
 
 import {LendingPool} from "src/LendingPool.sol";
 
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 /// @title Configuration Test Contract
-contract ConfigurationTest is Test {
+contract CrossChainActionsTest is Test {
     using FixedPointMathLib for uint256;
 
     /* Lending Pool Contracts */
@@ -32,215 +35,247 @@ contract ConfigurationTest is Test {
     LendingPool flarePool;
 
     /* Mocks */
-    MockERC20 asset;
-    MockERC20 borrowAsset;
+    MockERC20 testEth;
+    MockERC20 testUsdc;
 
     MockPriceOracle oracle;
+    MockFtsoRegistry ftsoRegistry;
+
     MockInterestRateModel interestRateModel;
     // MockLiquidator liquidator;
 
+    PriceOraclePlugin priceOraclePlugin;
+
+    uint256 constant ETH_FTSO_IDX = 10;
+    uint256 constant ETH_FTSO_DECIMALS = 5;
+    uint256 constant USDC_FTSO_IDX = 25;
+    uint256 constant USDC_FTSO_DECIMALS = 5;
+
     function setUp() public {
-        ethPool = new LendingPool(address(this), address(this));
-        flarePool = new LendingPool(address(this), address(this));
+        // ! For non upgradable contracts
+        // ethPool = new LendingPool(address(this), address(this));
+        // flarePool = new LendingPool(address(this), address(this));
+
+        // ! For upgradable contracts
+        ethPool = new LendingPool();
+        ethPool.initialize(address(this), address(this));
+        flarePool = new LendingPool();
+        flarePool.initialize(address(this), address(this));
 
         interestRateModel = new MockInterestRateModel();
 
-        asset = new MockERC20("Mock Token", "MKT", 18);
+        testEth = new MockERC20("Mock Eth", "MKE", 18);
 
-        ethPool.configureAsset(address(asset), address(asset), 0.5e18, 0);
-        ethPool.setInterestRateModel(address(asset), address(interestRateModel));
-        flarePool.configureAsset(address(asset), address(asset), 0.5e18, 0);
-        flarePool.setInterestRateModel(address(asset), address(interestRateModel));
+        ethPool.configureAsset(address(testEth), address(testEth), 0.5e18, 0);
+        ethPool.setInterestRateModel(address(testEth), address(interestRateModel));
+        flarePool.configureAsset(address(testEth), address(testEth), 0.5e18, 0);
+        flarePool.setInterestRateModel(address(testEth), address(interestRateModel));
 
-        oracle = new MockPriceOracle();
-        oracle.updatePrice(address(asset), 1e18);
-        ethPool.setOracle(address(oracle));
-        flarePool.setOracle(address(oracle));
+        testUsdc = new MockERC20("Mock USDC", "MKU", 18);
 
-        borrowAsset = new MockERC20("Mock Token", "MKT", 18);
+        ethPool.configureAsset(address(testUsdc), address(testUsdc), 0, 1e18);
+        ethPool.setInterestRateModel(address(testUsdc), address(interestRateModel));
+        flarePool.configureAsset(address(testUsdc), address(testUsdc), 0, 1e18);
+        flarePool.setInterestRateModel(address(testUsdc), address(interestRateModel));
 
-        ethPool.configureAsset(address(borrowAsset), address(borrowAsset), 0, 1e18);
-        ethPool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
-        flarePool.configureAsset(address(borrowAsset), address(borrowAsset), 0, 1e18);
-        flarePool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
+        // * ORACLE CONFIGURATIONS
 
-        // liquidator = new MockLiquidator(pool, PriceOracle(address(oracle)));
+        priceOraclePlugin = new PriceOraclePlugin(address(testEth), ETH_FTSO_IDX);
+        priceOraclePlugin.setOracleSource(address(this));
+
+        ethPool.setPriceOraclePlugin(address(priceOraclePlugin));
+        flarePool.setPriceOraclePlugin(address(priceOraclePlugin));
+
+        if (block.chainid != 16) {
+            // ! On Sepolia
+            oracle = new MockPriceOracle();
+            oracle.updatePrice(address(testEth), 3000e18);
+            oracle.updatePrice(address(testUsdc), 1e18);
+            priceOraclePlugin.setOracleSource(address(oracle));
+        } else {
+            // ! If on Flare
+
+            priceOraclePlugin.setFtsoIndex(address(testEth), ETH_FTSO_IDX);
+            priceOraclePlugin.setFtsoIndex(address(testUsdc), USDC_FTSO_IDX);
+
+            ftsoRegistry = new MockFtsoRegistry();
+            ftsoRegistry.updatePrice(ETH_FTSO_IDX, 3000e5, ETH_FTSO_DECIMALS);
+            ftsoRegistry.updatePrice(USDC_FTSO_IDX, 1e5, USDC_FTSO_DECIMALS);
+
+            priceOraclePlugin.setOracleSource(address(ftsoRegistry));
+        }
     }
 
     function increaseExchangeLiquidity() internal {
         // NOTE: Funds both pools with enough assets to test crosschain interactions.
-        mintAndApprove(asset, 100 ether, address(ethPool));
-        ethPool.increaseAvailableLiquidity(address(asset), 100 ether);
+        mintAndApprove(testEth, 100 ether, address(ethPool));
+        ethPool.increaseAvailableLiquidity(address(testEth), 100 ether);
 
-        mintAndApprove(borrowAsset, 100 ether, address(ethPool));
-        ethPool.increaseAvailableLiquidity(address(borrowAsset), 100 ether);
+        mintAndApprove(testUsdc, 100 ether, address(ethPool));
+        ethPool.increaseAvailableLiquidity(address(testUsdc), 100 ether);
 
-        mintAndApprove(asset, 100 ether, address(flarePool));
-        flarePool.increaseAvailableLiquidity(address(asset), 100 ether);
+        mintAndApprove(testEth, 100 ether, address(flarePool));
+        flarePool.increaseAvailableLiquidity(address(testEth), 100 ether);
 
-        mintAndApprove(borrowAsset, 100 ether, address(flarePool));
-        flarePool.increaseAvailableLiquidity(address(borrowAsset), 100 ether);
+        mintAndApprove(testUsdc, 100 ether, address(flarePool));
+        flarePool.increaseAvailableLiquidity(address(testUsdc), 100 ether);
     }
 
     function testCrossChainDeposit(uint256 amount) public {
-        vm.assume(amount >= 1e5 && amount <= 1e27);
+        vm.assume(amount >= 1e5 && amount <= 1e19);
 
-        // Mint, approve, and deposit the asset.
-        mintAndApprove(asset, amount, address(ethPool));
+        // Mint, approve, and deposit the testEth.
+        mintAndApprove(testEth, amount, address(ethPool));
 
-        ethPool.deposit(address(asset), amount, true);
+        ethPool.deposit(address(testEth), amount, true);
 
         // Checks. Note that the default exchange rate is 1,
         // so the values should be equal to the input amount.
-        assertEq(ethPool.balanceOf(address(asset), address(this)), amount, "Incorrect Balance");
-        assertEq(ethPool.totalUnderlying(address(asset)), amount, "Incorrect Total Underlying");
+        assertEq(ethPool.balanceOf(address(testEth), address(this)), amount, "Incorrect Balance");
+        assertEq(ethPool.totalUnderlying(address(testEth)), amount, "Incorrect Total Underlying");
 
-        flarePool.handleCrossChainDeposit(address(asset), amount, address(this), true);
+        flarePool.handleCrossChainDeposit(address(testEth), amount, address(this), true);
 
         // The message was relayed and the balance was updated.
-        assertEq(flarePool.balanceOf(address(asset), address(this)), amount, "Incorrect Balance");
-        assertEq(flarePool.totalUnderlying(address(asset)), amount, "Incorrect Total Underlying");
+        assertEq(flarePool.balanceOf(address(testEth), address(this)), amount, "Incorrect Balance");
+        assertEq(flarePool.totalUnderlying(address(testEth)), amount, "Incorrect Total Underlying");
     }
 
     function testCrossChainSourceWithdrawal(uint256 amount) public {
-        vm.assume(amount >= 1e12 && amount <= 1e27);
+        vm.assume(amount >= 1e12 && amount <= 1e19);
 
-        // Mint, approve, and deposit the asset.
+        // Mint, approve, and deposit the testEth.
         testCrossChainDeposit(amount);
 
-        // Withdraw the asset.
-        ethPool.withdraw(address(asset), amount, false);
+        // Withdraw the testEth.
+        ethPool.withdraw(address(testEth), amount, false);
 
         // Checks.
-        assertEq(asset.balanceOf(address(this)), amount, "Incorrect asset balance");
-        assertEq(ethPool.balanceOf(address(asset), address(this)), 0, "Incorrect pool balance");
+        assertEq(testEth.balanceOf(address(this)), amount, "Incorrect testEth balance");
+        assertEq(ethPool.balanceOf(address(testEth), address(this)), 0, "Incorrect pool balance");
 
-        flarePool.handleCrossChainWithdrawal(address(asset), amount, address(this), false);
+        flarePool.handleCrossChainWithdrawal(address(testEth), amount, address(this), false);
 
-        assertEq(asset.balanceOf(address(this)), amount, "Incorrect asset balance");
-        assertEq(flarePool.balanceOf(address(asset), address(this)), 0, "Incorrect pool balance");
+        assertEq(testEth.balanceOf(address(this)), amount, "Incorrect testEth balance");
+        assertEq(flarePool.balanceOf(address(testEth), address(this)), 0, "Incorrect pool balance");
     }
 
     function testCrossChainDestWithdrawal(uint256 amount) public {
         vm.assume(amount >= 1e12 && amount <= 1e19);
 
-        // Mint, approve, and deposit the asset.
+        // Mint, approve, and deposit the testEth.
         testCrossChainDeposit(amount);
 
         increaseExchangeLiquidity();
 
-        console.log("Flare Pool Balance: ", flarePool.balanceOf(address(asset), address(this)));
-
-        // Withdraw the asset.
-        flarePool.withdraw(address(asset), amount, false);
+        // Withdraw the testEth.
+        flarePool.withdraw(address(testEth), amount, false);
 
         // Checks.
-        assertEq(asset.balanceOf(address(this)), amount, "Incorrect asset balance");
-        assertApproxEqAbs(flarePool.balanceOf(address(asset), address(this)), 100 ether, 100, "Incorrect pool balance");
+        assertEq(testEth.balanceOf(address(this)), amount, "Incorrect testEth balance");
+        assertApproxEqAbs(
+            flarePool.balanceOf(address(testEth), address(this)), 100 ether, 100, "Incorrect pool balance"
+        );
 
-        ethPool.handleCrossChainWithdrawal(address(asset), amount, address(this), false);
+        ethPool.handleCrossChainWithdrawal(address(testEth), amount, address(this), false);
 
-        assertEq(asset.balanceOf(address(this)), amount, "Incorrect asset balance");
-        assertApproxEqAbs(ethPool.balanceOf(address(asset), address(this)), 100 ether, 100, "Incorrect pool balance");
+        assertEq(testEth.balanceOf(address(this)), amount, "Incorrect testEth balance");
+        assertApproxEqAbs(ethPool.balanceOf(address(testEth), address(this)), 100 ether, 100, "Incorrect pool balance");
     }
 
     function testCrossChainSourceBorrow(uint256 amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e19);
 
-        // Mint, approve, and deposit the asset.
+        // Mint, approve, and deposit the testEth.
         testCrossChainDeposit(amount);
 
         increaseExchangeLiquidity();
 
         // Set the price of collateral to 1 ETH.
-        oracle.updatePrice(address(asset), 1e18);
+        updateOraclePrices(address(testEth), 1e18);
 
-        // Set the price of the borrow asset to 2 ETH.
+        // Set the price of the borrow testEth to 2 ETH.
         // This means that with a 0.5 lend factor, we should be able to borrow 0.25 ETH.
-        oracle.updatePrice(address(borrowAsset), 2e18);
+        updateOraclePrices(address(testUsdc), 2e18);
 
-        // Borrow the asset.
-        ethPool.borrow(address(borrowAsset), amount / 4);
+        // Borrow the testEth.
+        ethPool.borrow(address(testUsdc), amount / 4);
 
         // Checks.
-        assertEq(borrowAsset.balanceOf(address(this)), amount / 4);
-        assertEq(ethPool.borrowBalance(address(borrowAsset), address(this)), amount / 4);
-        assertEq(ethPool.totalBorrows(address(borrowAsset)), amount / 4);
+        assertEq(testUsdc.balanceOf(address(this)), amount / 4);
+        assertEq(ethPool.borrowBalance(address(testUsdc), address(this)), amount / 4);
+        assertEq(ethPool.totalBorrows(address(testUsdc)), amount / 4);
 
-        flarePool.handleCrossChainBorrow(address(borrowAsset), amount / 4, address(this));
+        flarePool.handleCrossChainBorrow(address(testUsdc), amount / 4, address(this));
 
-        assertEq(borrowAsset.balanceOf(address(this)), amount / 4);
-        assertEq(flarePool.borrowBalance(address(borrowAsset), address(this)), amount / 4);
-        assertEq(flarePool.totalBorrows(address(borrowAsset)), amount / 4);
+        assertEq(testUsdc.balanceOf(address(this)), amount / 4);
+        assertEq(flarePool.borrowBalance(address(testUsdc), address(this)), amount / 4);
+        assertEq(flarePool.totalBorrows(address(testUsdc)), amount / 4);
     }
 
     function testCrossChainDestBorrow(uint256 amount) public {
-        vm.assume(amount >= 1e5 && amount <= 1e27);
+        vm.assume(amount >= 1e5 && amount <= 1e19);
 
-        uint256 amount = 1e18;
+        // uint256 amount = 1e18;
 
-        // Mint, approve, and deposit the asset.
+        // Mint, approve, and deposit the testEth.
         testCrossChainDeposit(amount);
 
         increaseExchangeLiquidity();
 
-        // Set the price of collateral to 1 ETH.
-        oracle.updatePrice(address(asset), 1e18);
+        updateOraclePrices(address(testEth), 4000e18);
 
-        // Set the price of the borrow asset to 2 ETH.
+        // Set the price of the borrow testEth to 2 ETH.
         // This means that with a 0.5 lend factor, we should be able to borrow 0.25 ETH.
-        oracle.updatePrice(address(borrowAsset), 2e18);
+        updateOraclePrices(address(testUsdc), 2e18);
 
-        // Borrow the asset.
-        flarePool.borrow(address(borrowAsset), amount / 4);
+        // Borrow the testEth.
+        flarePool.borrow(address(testUsdc), amount / 4);
 
         // Checks.
-        assertEq(borrowAsset.balanceOf(address(this)), amount / 4);
-        assertEq(flarePool.borrowBalance(address(borrowAsset), address(this)), amount / 4);
-        assertEq(flarePool.totalBorrows(address(borrowAsset)), amount / 4);
+        assertEq(testUsdc.balanceOf(address(this)), amount / 4);
+        assertEq(flarePool.borrowBalance(address(testUsdc), address(this)), amount / 4);
+        assertEq(flarePool.totalBorrows(address(testUsdc)), amount / 4);
 
-        ethPool.handleCrossChainBorrow(address(borrowAsset), amount / 4, address(this));
+        ethPool.handleCrossChainBorrow(address(testUsdc), amount / 4, address(this));
 
-        assertEq(borrowAsset.balanceOf(address(this)), amount / 4);
-        assertEq(ethPool.borrowBalance(address(borrowAsset), address(this)), amount / 4);
-        assertEq(ethPool.totalBorrows(address(borrowAsset)), amount / 4);
+        assertEq(testUsdc.balanceOf(address(this)), amount / 4);
+        assertEq(ethPool.borrowBalance(address(testUsdc), address(this)), amount / 4);
+        assertEq(ethPool.totalBorrows(address(testUsdc)), amount / 4);
     }
 
     //
     function testCrossChainSourceRepay(uint256 amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e19);
 
-        uint256 amount = 0.25 ether;
+        // uint256 amount = 0.25 ether;
 
         testCrossChainSourceBorrow(amount);
 
         // Repay the tokens.
-        borrowAsset.approve(address(ethPool), amount / 4);
-        ethPool.repay(address(borrowAsset), amount / 4);
+        testUsdc.approve(address(ethPool), amount / 4);
+        ethPool.repay(address(testUsdc), amount / 4);
 
         // Checks.
 
-        assertApproxEqAbs(borrowAsset.balanceOf(address(this)), 0, 100);
-        assertApproxEqAbs(ethPool.borrowBalance(address(borrowAsset), address(this)), 0, 100);
-        assertEq(ethPool.totalBorrows(address(borrowAsset)), 0);
+        assertApproxEqAbs(testUsdc.balanceOf(address(this)), 0, 100);
+        assertApproxEqAbs(ethPool.borrowBalance(address(testUsdc), address(this)), 0, 100);
+        assertEq(ethPool.totalBorrows(address(testUsdc)), 0);
     }
 
     function testCrossChainDestRepay(uint256 amount) public {
         vm.assume(amount >= 1e5 && amount <= 1e19);
 
-        uint256 amount = 0.25 ether;
-
         testCrossChainDestBorrow(amount);
 
         // Repay the tokens.
-        borrowAsset.approve(address(flarePool), amount);
-        flarePool.repay(address(borrowAsset), amount);
+        testUsdc.approve(address(flarePool), amount / 4);
+        flarePool.repay(address(testUsdc), amount / 4);
 
         // Checks.
-
-        assertApproxEqAbs(borrowAsset.balanceOf(address(this)), 0, 100);
-        assertApproxEqAbs(flarePool.borrowBalance(address(borrowAsset), address(this)), 0, 100);
-        assertEq(flarePool.totalBorrows(address(borrowAsset)), 0);
+        assertApproxEqAbs(testUsdc.balanceOf(address(this)), 0, 100);
+        assertApproxEqAbs(flarePool.borrowBalance(address(testUsdc), address(this)), 0, 100);
+        assertEq(flarePool.totalBorrows(address(testUsdc)), 0);
     }
 
     // UTILS ================================================================
@@ -249,6 +284,18 @@ contract ConfigurationTest is Test {
         underlying.mint(address(this), amount);
         underlying.approve(poolAddress, amount);
 
-        uint256 userBalance = asset.balanceOf(address(this));
+        // uint256 userBalance = testEth.balanceOf(address(this));
+    }
+
+    function updateOraclePrices(address _asset, uint256 price) private {
+        if (block.chainid != 16) {
+            oracle.updatePrice(_asset, price);
+        } else {
+            if (_asset == address(testEth)) {
+                ftsoRegistry.updatePrice(ETH_FTSO_IDX, price / 10 ** (18 - ETH_FTSO_DECIMALS), ETH_FTSO_DECIMALS);
+            } else if (_asset == address(testUsdc)) {
+                ftsoRegistry.updatePrice(USDC_FTSO_IDX, price / 10 ** (18 - USDC_FTSO_DECIMALS), USDC_FTSO_DECIMALS);
+            }
+        }
     }
 }

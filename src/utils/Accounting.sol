@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.7.0 <0.9.0;
 
-import {InternalPriceOracle} from "./PriceOracle.sol";
+import {IPriceOraclePlugin} from "../Interfaces/IPriceOraclePlugin.sol";
 
 import {IERC20} from "../Interfaces/IERC20.sol";
 import {InterestRateModel} from "../Interfaces/IIRM.sol";
@@ -11,7 +11,7 @@ import {Configuration} from "./Configuration.sol";
 import {SafeCastLib} from "solmate/utils/SafeCastLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-abstract contract Accounting is Configuration, InternalPriceOracle {
+abstract contract Accounting is Configuration {
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
 
@@ -47,6 +47,8 @@ abstract contract Accounting is Configuration, InternalPriceOracle {
     function balanceOf(address asset, address user) public view returns (uint256) {
         // Multiply the user's internal balance units by the internal exchange rate of the asset.
 
+        if (internalBalances[asset][user] == 0) return 0;
+
         return internalBalances[asset][user].mulDivDown(internalBalanceExchangeRate(asset), baseUnits[asset]);
     }
 
@@ -71,6 +73,8 @@ abstract contract Accounting is Configuration, InternalPriceOracle {
     /// @param asset The underlying asset.
     /// @param user The user to get the underlying borrow balance of.
     function borrowBalance(address asset, address user) public view returns (uint256) {
+        if (internalDebt[asset][user] == 0) return 0;
+
         // Multiply the user's internal debt units by the internal debt exchange rate of the asset.
         return internalDebt[asset][user].mulDivDown(internalDebtExchangeRate(asset), baseUnits[asset]);
     }
@@ -158,11 +162,12 @@ abstract contract Accounting is Configuration, InternalPriceOracle {
             // Current user utilized asset.
             currentAsset = utilized[i];
 
+            uint256 assetPrice = IPriceOraclePlugin(priceOraclePlugin).getAssetPrice(currentAsset);
+
             // Calculate the user's maximum borrowable value for this asset.
             // balanceOfUnderlying(asset,user) * ethPrice * collateralFactor.
-            liquidity.maximumBorrowable += balanceOf(currentAsset, user).mulDivDown(
-                getAssetPrice(currentAsset), baseUnits[currentAsset]
-            ).mulDivDown(configurations[currentAsset].lendFactor, 1e18);
+            liquidity.maximumBorrowable += balanceOf(currentAsset, user).mulDivDown(assetPrice, baseUnits[currentAsset])
+                .mulDivDown(configurations[currentAsset].lendFactor, 1e18);
 
             // Check if current asset == underlying asset.
             hypotheticalBorrowBalance = currentAsset == asset ? amount : 0;
@@ -173,12 +178,11 @@ abstract contract Accounting is Configuration, InternalPriceOracle {
             }
 
             // Add the user's borrow balance in this asset to their total borrow balance.
-            liquidity.borrowBalance +=
-                hypotheticalBorrowBalance.mulDivDown(getAssetPrice(currentAsset), baseUnits[currentAsset]);
+            liquidity.borrowBalance += hypotheticalBorrowBalance.mulDivDown(assetPrice, baseUnits[currentAsset]);
 
             // Multiply the user's borrow balance in this asset by the borrow factor.
             liquidity.borrowBalancesTimesBorrowFactors += hypotheticalBorrowBalance.mulDivDown(
-                getAssetPrice(currentAsset), baseUnits[currentAsset]
+                assetPrice, baseUnits[currentAsset]
             ).mulWadDown(configurations[currentAsset].borrowFactor);
         }
 
@@ -195,7 +199,7 @@ abstract contract Accounting is Configuration, InternalPriceOracle {
     /// @param asset The underlying asset.
     /// @param user The user to check.
     /// @param amount The amount of underlying to borrow.
-    function canBorrow(address asset, address user, uint256 amount) internal view returns (bool) {
+    function canBorrow(address asset, address user, uint256 amount) public view returns (bool) {
         // Ensure the user's health factor will be greater than 1.
 
         return calculateHealthFactor(asset, user, amount) >= 1e18;
@@ -213,11 +217,12 @@ abstract contract Accounting is Configuration, InternalPriceOracle {
             // Current user utilized asset.
             currentAsset = utilized[i];
 
+            uint256 assetPrice = IPriceOraclePlugin(priceOraclePlugin).getAssetPrice(currentAsset);
+
             // Calculate the user's maximum borrowable value for this asset.
             // balanceOfUnderlying(asset,user) * ethPrice * lendFactor.
-            maximumBorrowable += balanceOf(currentAsset, msg.sender).mulDivDown(
-                getAssetPrice(currentAsset), baseUnits[currentAsset]
-            ).mulDivDown(configurations[currentAsset].lendFactor, 1e18);
+            maximumBorrowable += balanceOf(currentAsset, msg.sender).mulDivDown(assetPrice, baseUnits[currentAsset])
+                .mulDivDown(configurations[currentAsset].lendFactor, 1e18);
         }
     }
 
@@ -249,6 +254,8 @@ abstract contract Accounting is Configuration, InternalPriceOracle {
         view
         returns (uint256)
     {
+        // TODO: Implement desired liquidation logic.
+
         return 0;
     }
 }

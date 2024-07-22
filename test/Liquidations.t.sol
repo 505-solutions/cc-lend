@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity >=0.7.0 <0.9.0;
+// // SPDX-License-Identifier: MIT
+// pragma solidity >=0.7.0 <0.9.0;
 
 // import "forge-std/Test.sol";
 // import "forge-std/console.sol";
@@ -56,12 +56,9 @@ pragma solidity >=0.7.0 <0.9.0;
 //         borrowAsset.initialize("Borrow Test Token", "TBT", 18);
 
 //         pool.configureAsset(address(borrowAsset), 0, 1e18);
-//         pool.setInterestRateModel(
-//             address(borrowAsset),
-//             address(interestRateModel)
-//         );
+//         pool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
 
-//         liquidator = new MockLiquidator(pool, PriceOracle(address(oracle)));
+//         // liquidator = new MockLiquidator(pool, PriceOracle(address(oracle)));
 //     }
 
 //     /*///////////////////////////////////////////////////////////////
@@ -81,10 +78,7 @@ pragma solidity >=0.7.0 <0.9.0;
 //         pool.deposit(address(borrowAsset), amount, true);
 
 //         // Update borrow Asset configuration
-//         pool.updateConfiguration(
-//             address(borrowAsset),
-//             LendingPool.Configuration(0.5e18, 1e18)
-//         );
+//         pool.updateConfiguration(address(borrowAsset), LendingPool.Configuration(0.5e18, 1e18));
 
 //         // Set the price of collateral.
 //         oracle.updatePrice(address(asset), 1e18);
@@ -96,10 +90,7 @@ pragma solidity >=0.7.0 <0.9.0;
 //         pool.borrow(address(borrowAsset), pool.maxBorrowable());
 
 //         // Current Health factor should be 1.00.
-//         assertEq(
-//             pool.calculateHealthFactor(ERC20(address(0)), address(this), 0),
-//             1e18
-//         );
+//         assertEq(pool.calculateHealthFactor(ERC20(address(0)), address(this), 0), 1e18);
 
 //         // drop the price of asset by 10%.
 //         oracle.updatePrice(address(asset), 0.9e18);
@@ -113,24 +104,14 @@ pragma solidity >=0.7.0 <0.9.0;
 
 //         testUserLiquidatable(amount);
 
-//         uint256 health = pool.calculateHealthFactor(
-//             ERC20(address(0)),
-//             address(this),
-//             0
-//         );
+//         uint256 health = pool.calculateHealthFactor(ERC20(address(0)), address(this), 0);
 
-//         uint256 repayAmount = liquidator.calculateRepayAmount(
-//             address(this),
-//             health
-//         );
+//         uint256 repayAmount = liquidator.calculateRepayAmount(address(this), health);
 
 //         mintAndApprove(borrowAsset, repayAmount);
 //         pool.deposit(address(borrowAsset), repayAmount, true);
 
-//         assertEq(
-//             pool.calculateHealthFactor(ERC20(address(0)), address(this), 0),
-//             pool.MAX_HEALTH_FACTOR()
-//         );
+//         assertEq(pool.calculateHealthFactor(ERC20(address(0)), address(this), 0), pool.MAX_HEALTH_FACTOR());
 //     }
 
 //     /*///////////////////////////////////////////////////////////////
