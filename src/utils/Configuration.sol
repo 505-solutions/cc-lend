@@ -3,7 +3,7 @@ pragma solidity >=0.7.0 <0.9.0;
 
 import "./MainStorage.sol";
 
-import {InternalPriceOracle} from "./PriceOracle.sol";
+import {PriceOraclePlugin} from "../PriceOraclePlugin.sol";
 
 import {IERC20} from "../Interfaces/IERC20.sol";
 import {InterestRateModel} from "../Interfaces/IIRM.sol";
@@ -11,14 +11,18 @@ import {InterestRateModel} from "../Interfaces/IIRM.sol";
 import {SafeCastLib} from "solmate/utils/SafeCastLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-import {Owned} from "solmate/auth/Owned.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-abstract contract Configuration is MainStorage, Owned {
+abstract contract Configuration is MainStorage, OwnableUpgradeable {
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
 
     function setMessageRelay(address relay) public onlyOwner {
         s_messageRelay = relay;
+    }
+
+    function setPriceOraclePlugin(address _plugin) public onlyOwner {
+        priceOraclePlugin = _plugin;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -41,12 +45,10 @@ abstract contract Configuration is MainStorage, Owned {
     /// @param counterpart The address of the asset on the other chain.
     /// @param lendFactor The lend factor for the asset.
     /// @param borrowFactor The borrow factor for the asset.
-    function configureAsset(
-        address asset,
-        address counterpart,
-        uint256 lendFactor,
-        uint256 borrowFactor // Configuration memory configuration
-    ) external onlyOwner {
+    function configureAsset(address asset, address counterpart, uint256 lendFactor, uint256 borrowFactor)
+        external
+        onlyOwner
+    {
         // Ensure that this asset has not been configured.
         require(
             configurations[asset].borrowFactor == 0 && configurations[asset].lendFactor == 0, "ASSET_ALREADY_CONFIGURED"

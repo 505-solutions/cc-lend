@@ -5,6 +5,9 @@ import {Script} from "forge-std/Script.sol";
 
 import {MockPriceOracle} from "../test/mocks/MockPriceOracle.sol";
 import {MockInterestRateModel} from "../test/mocks/MockInterestRateModel.sol";
+import {PriceOraclePlugin} from "src/PriceOraclePlugin.sol";
+
+import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract DeployMockOracle is Script {
     function run() external returns (MockPriceOracle) {
@@ -23,5 +26,20 @@ contract DeployMockIRM is Script {
         vm.stopBroadcast();
 
         return (irm);
+    }
+}
+
+contract DeployMockPOP is Script {
+    uint256 constant WETH_FTSO_IDX = 10;
+
+    function run() external returns (PriceOraclePlugin) {
+        HelperConfig helperConfig = new HelperConfig();
+        (,,,,, address wethAddress,,) = helperConfig.activeNetworkConfig();
+
+        vm.startBroadcast();
+        PriceOraclePlugin pop = new PriceOraclePlugin(wethAddress, WETH_FTSO_IDX);
+        vm.stopBroadcast();
+
+        return (pop);
     }
 }

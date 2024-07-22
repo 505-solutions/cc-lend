@@ -30,77 +30,6 @@
       "transactionType": "CALL",
       "contractName": null,
       "contractAddress": "0x524212eE2B50f9950767a58F2dAfFA5f3271017f",
-      "function": "setInterestRateModel(address,address)",
-      "arguments": [
-        "0xc89b59096964e48c6A1456c08a94D6b2A0f6Fa5B",
-        "0x950474a968e62133423494b9Ee5A96b27843D4cA"
-      ],
-      "transaction": {
-        "type": "0x02",
-        "from": "0xacedf8742edc7d923e1e6462852cce136ee9fb56",
-        "to": "0x524212ee2b50f9950767a58f2daffa5f3271017f",
-        "gas": "0x103b2",
-        "value": "0x0",
-        "data": "0x17585b12000000000000000000000000c89b59096964e48c6a1456c08a94d6b2a0f6fa5b000000000000000000000000950474a968e62133423494b9ee5a96b27843d4ca",
-        "nonce": "0x64",
-        "accessList": []
-      },
-      "additionalContracts": [],
-      "isFixedGasLimit": false
-    },
-    {
-      "hash": null,
-      "transactionType": "CALL",
-      "contractName": null,
-      "contractAddress": "0x524212eE2B50f9950767a58F2dAfFA5f3271017f",
-      "function": "configureAsset(address,address,uint256,uint256)",
-      "arguments": [
-        "0x013bbC069FdD066009e0701Fe9969d4dDf3c7e4E",
-        "0x47d8BAC6C022CaC838f814A67e2d7A0344580D6D",
-        "900000000000000000",
-        "900000000000000000"
-      ],
-      "transaction": {
-        "type": "0x02",
-        "from": "0xacedf8742edc7d923e1e6462852cce136ee9fb56",
-        "to": "0x524212ee2b50f9950767a58f2daffa5f3271017f",
-        "gas": "0x28f79",
-        "value": "0x0",
-        "data": "0xedfc37ef000000000000000000000000013bbc069fdd066009e0701fe9969d4ddf3c7e4e00000000000000000000000047d8bac6c022cac838f814a67e2d7a0344580d6d0000000000000000000000000000000000000000000000000c7d713b49da00000000000000000000000000000000000000000000000000000c7d713b49da0000",
-        "nonce": "0x65",
-        "accessList": []
-      },
-      "additionalContracts": [],
-      "isFixedGasLimit": false
-    },
-    {
-      "hash": null,
-      "transactionType": "CALL",
-      "contractName": null,
-      "contractAddress": "0x524212eE2B50f9950767a58F2dAfFA5f3271017f",
-      "function": "setInterestRateModel(address,address)",
-      "arguments": [
-        "0x013bbC069FdD066009e0701Fe9969d4dDf3c7e4E",
-        "0x950474a968e62133423494b9Ee5A96b27843D4cA"
-      ],
-      "transaction": {
-        "type": "0x02",
-        "from": "0xacedf8742edc7d923e1e6462852cce136ee9fb56",
-        "to": "0x524212ee2b50f9950767a58f2daffa5f3271017f",
-        "gas": "0x103b2",
-        "value": "0x0",
-        "data": "0x17585b12000000000000000000000000013bbc069fdd066009e0701fe9969d4ddf3c7e4e000000000000000000000000950474a968e62133423494b9ee5a96b27843d4ca",
-        "nonce": "0x66",
-        "accessList": []
-      },
-      "additionalContracts": [],
-      "isFixedGasLimit": false
-    },
-    {
-      "hash": null,
-      "transactionType": "CALL",
-      "contractName": null,
-      "contractAddress": "0x524212eE2B50f9950767a58F2dAfFA5f3271017f",
       "function": "setPriceOraclePlugin(address)",
       "arguments": [
         "0xbfc17B4135a6DBf44Cb008ad2aAFB56a29E894D5"
@@ -112,7 +41,7 @@
         "gas": "0x1072c",
         "value": "0x0",
         "data": "0x1e6710e2000000000000000000000000bfc17b4135a6dbf44cb008ad2aafb56a29e894d5",
-        "nonce": "0x67",
+        "nonce": "0x64",
         "accessList": []
       },
       "additionalContracts": [],
@@ -135,7 +64,7 @@
         "gas": "0xfb9c",
         "value": "0x0",
         "data": "0xbdd223e3000000000000000000000000c89b59096964e48c6a1456c08a94d6b2a0f6fa5b000000000000000000000000000000000000000000000000000000000000000a",
-        "nonce": "0x68",
+        "nonce": "0x65",
         "accessList": []
       },
       "additionalContracts": [],
@@ -157,7 +86,7 @@
         "gas": "0xf46c",
         "value": "0x0",
         "data": "0x6828cd2c000000000000000000000000f7bbf40145c82fca13011c783aaeca6bd95fd652",
-        "nonce": "0x69",
+        "nonce": "0x66",
         "accessList": []
       },
       "additionalContracts": [],
@@ -173,7 +102,7 @@
       "value": "0x524212eE2B50f9950767a58F2dAfFA5f3271017f"
     }
   },
-  "timestamp": 1721660560,
+  "timestamp": 1721660542,
   "chain": 16,
   "commit": "c31b084"
 }

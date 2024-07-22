@@ -7,7 +7,8 @@ contract HelperConfig is Script {
     struct NetworkConfig {
         address lendingPool;
         address messageRelay;
-        address priceOracle;
+        address sourceOracle;
+        address priceOraclePlugin;
         address interesRateModel;
         address weth;
         address usdc;
@@ -44,7 +45,8 @@ contract HelperConfig is Script {
         sepoliaNetworkConfig = NetworkConfig({
             lendingPool: 0x84bcB82A356d45D5c6BD91857aA6a3E933Fa82a5,
             messageRelay: 0x7e9E04C1D3209e62F3950F135Af474B1D3210d3d,
-            priceOracle: 0xA60654A5569a89630b270A581D81645417764682, // ETH / USD
+            sourceOracle: 0xA60654A5569a89630b270A581D81645417764682,
+            priceOraclePlugin: 0x0000000000000000000000000000000000000000,
             interesRateModel: 0xD06A506eFB54bbFE13f7fc0De1e86717902EB59A,
             weth: sepoliaWeth,
             usdc: sepoliaUsdc,
@@ -54,10 +56,11 @@ contract HelperConfig is Script {
 
     function getFlareConfig() public view returns (NetworkConfig memory flareNetworkConfig) {
         flareNetworkConfig = NetworkConfig({
-            lendingPool: 0x9ae45B108B866f3232b46Df1c2F88B4B28DD45B7,
+            lendingPool: 0x524212eE2B50f9950767a58F2dAfFA5f3271017f,
             messageRelay: 0xa80ea62d1f5bBD985d20e18FA0bb46EE75A8a8d8,
-            priceOracle: 0x9bc96047C57154B455d68aFbc0c5e6Fed573184B, // ETH / USD
-            interesRateModel: 0x4FbFF7A75A97E02a168526464968A591e5Ec77c1,
+            sourceOracle: 0xf7Bbf40145C82Fca13011C783AaeCa6bD95fd652,
+            priceOraclePlugin: 0xbfc17B4135a6DBf44Cb008ad2aAFB56a29E894D5,
+            interesRateModel: 0x950474a968e62133423494b9Ee5A96b27843D4cA,
             weth: flareWeth,
             usdc: flareUsdc,
             deployerKey: vm.envUint("PRIVATE_KEY")

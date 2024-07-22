@@ -11,6 +11,16 @@ forge verify-contract \
     0xA60654A5569a89630b270A581D81645417764682 \
    test/mocks/MockPriceOracle.sol:MockPriceOracle
 
+
+forge verify-contract \
+    --chain-id 16 \
+    --watch \
+    --verifier blockscout \
+    --verifier-url https://coston-explorer.flare.network/api \
+    0x9bc96047C57154B455d68aFbc0c5e6Fed573184B \
+   test/mocks/MockPriceOracle.sol:MockPriceOracle
+
+
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
@@ -88,5 +98,16 @@ forge verify-contract \
     0xD06A506eFB54bbFE13f7fc0De1e86717902EB59A \
     test/mocks/MockInterestRateModel.sol:MockInterestRateModel
 
+forge verify-contract \
+    --chain-id 16 \
+    --watch \
+    --verifier blockscout \
+    --verifier-url https://coston-explorer.flare.network/api \
+    0x950474a968e62133423494b9Ee5A96b27843D4cA \
+    test/mocks/MockInterestRateModel.sol:MockInterestRateModel
+
 
 cast abi-encode "constructor(address,address)" 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56 0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56
+
+
+
