@@ -9,15 +9,14 @@ import {MessageRelay} from "../src/MessageRelay.sol";
 import {MainStorage} from "../src/utils/MainStorage.sol";
 
 import {MockPriceOracle} from "../test/mocks/MockPriceOracle.sol";
-// import {ILendingPool} from "../src/Interfaces/ILendingPool.sol";
+import {MockFtsoRegistry} from "../test/mocks/MockFtsoRegistry.sol";
 import {EVMTransaction} from "src/Interfaces/IEVMTransactionVerification.sol";
-
-import {PriceOraclePlugin} from "src/PriceOraclePlugin.sol";
 
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract ConfigurePoolScript is Script {
     uint256 constant ETH_FTSO_IDX = 10;
+    uint256 constant USDC_FTSO_IDX = 0;
 
     function run() external returns (LendingPool) {
         HelperConfig helperConfig = new HelperConfig();
@@ -26,7 +25,6 @@ contract ConfigurePoolScript is Script {
             address lendingPool,
             address messageRelay,
             address sourceOracle,
-            address _priceOraclePlugin,
             address interesRateModel,
             address weth,
             address usdc,
@@ -36,26 +34,16 @@ contract ConfigurePoolScript is Script {
         (address counterWeth, address counterUsdc) = helperConfig.activeCounterAssets();
 
         LendingPool pool = LendingPool(lendingPool);
-        PriceOraclePlugin priceOraclePlugin = PriceOraclePlugin(_priceOraclePlugin);
 
         vm.startBroadcast(deployerKey);
 
-        pool.configureAsset(weth, counterWeth, 0.9e18, 0.9e18);
+        pool.configureAsset(weth, counterWeth, 0.9e18, 0.9e18, ETH_FTSO_IDX, true);
         pool.setInterestRateModel(weth, interesRateModel);
 
-        pool.configureAsset(usdc, counterUsdc, 0.9e18, 0.9e18);
+        pool.configureAsset(usdc, counterUsdc, 0.9e18, 0.9e18, USDC_FTSO_IDX, false);
         pool.setInterestRateModel(usdc, interesRateModel);
 
-        // * ORACLE CONFIGURATIONS
-        pool.setPriceOraclePlugin(address(priceOraclePlugin));
-
-        priceOraclePlugin.setFtsoIndex(weth, ETH_FTSO_IDX);
-        priceOraclePlugin.setOracleSource(sourceOracle);
-
-        if (block.chainid != 16) {
-            MockPriceOracle(sourceOracle).updatePrice(weth, 1e18);
-            MockPriceOracle(sourceOracle).updatePrice(usdc, 0.0003e18);
-        }
+        pool.setOracleSource(sourceOracle);
 
         vm.stopBroadcast();
 
@@ -67,7 +55,7 @@ contract UpdateConfigurationPoolScript is Script {
     function run() external returns (LendingPool) {
         HelperConfig helperConfig = new HelperConfig();
 
-        (address lendingPool,,,, address interesRateModel, address weth, address usdc, uint256 deployerKey) =
+        (address lendingPool,,, address interesRateModel, address weth, address usdc, uint256 deployerKey) =
             helperConfig.activeNetworkConfig();
 
         LendingPool pool = LendingPool(lendingPool);
@@ -92,7 +80,7 @@ contract ConfigureRelayScript is Script {
     function run() external returns (LendingPool) {
         HelperConfig helperConfig = new HelperConfig();
 
-        (address lendingPool, address messageRelay,,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
+        (address lendingPool, address messageRelay,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
 
         address evmTxVerifier = helperConfig.getEvmTxVerifier();
 
@@ -116,7 +104,7 @@ contract VerifyProofScript is Script {
     function run() external {
         HelperConfig helperConfig = new HelperConfig();
 
-        (address lendingPool, address messageRelay,,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
+        (address lendingPool, address messageRelay,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
 
         MessageRelay relay = MessageRelay(messageRelay);
 
@@ -176,5 +164,27 @@ contract VerifyProofScript is Script {
         vm.stopBroadcast();
 
         return ();
+    }
+}
+
+contract UpdateOraclePrices is Script {
+    uint256 constant ETH_FTSO_IDX = 10;
+    uint256 constant ETH_FTSO_DECIMALS = 5;
+    uint256 constant USDC_FTSO_IDX = 0;
+    uint256 constant USDC_FTSO_DECIMALS = 5;
+
+    function run() external {
+        HelperConfig helperConfig = new HelperConfig();
+
+        (,, address sourceOracle,, address weth, address usdc, uint256 deployerKey) = helperConfig.activeNetworkConfig();
+
+        MockFtsoRegistry ftsoRegistry = MockFtsoRegistry(sourceOracle);
+
+        vm.startBroadcast(deployerKey);
+
+        ftsoRegistry.updatePrice(ETH_FTSO_IDX, 3500 * 10 ** ETH_FTSO_DECIMALS, ETH_FTSO_DECIMALS);
+        ftsoRegistry.updatePrice(USDC_FTSO_IDX, 1 * 10 ** USDC_FTSO_DECIMALS, USDC_FTSO_DECIMALS);
+
+        vm.stopBroadcast();
     }
 }

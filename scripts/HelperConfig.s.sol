@@ -8,7 +8,6 @@ contract HelperConfig is Script {
         address lendingPool;
         address messageRelay;
         address sourceOracle;
-        address priceOraclePlugin;
         address interesRateModel;
         address weth;
         address usdc;
@@ -43,10 +42,9 @@ contract HelperConfig is Script {
 
     function getSepoliaEthConfig() public view returns (NetworkConfig memory sepoliaNetworkConfig) {
         sepoliaNetworkConfig = NetworkConfig({
-            lendingPool: 0x84bcB82A356d45D5c6BD91857aA6a3E933Fa82a5,
+            lendingPool: 0x8e43fB9eF1075D0d93674943A5F81273c77FF5D5,
             messageRelay: 0x7e9E04C1D3209e62F3950F135Af474B1D3210d3d,
-            sourceOracle: 0xA60654A5569a89630b270A581D81645417764682,
-            priceOraclePlugin: 0x0000000000000000000000000000000000000000,
+            sourceOracle: 0xc106b5332b9A5b964eE3F6fED6F857C8675dc8e9,
             interesRateModel: 0xD06A506eFB54bbFE13f7fc0De1e86717902EB59A,
             weth: sepoliaWeth,
             usdc: sepoliaUsdc,
@@ -56,10 +54,9 @@ contract HelperConfig is Script {
 
     function getFlareConfig() public view returns (NetworkConfig memory flareNetworkConfig) {
         flareNetworkConfig = NetworkConfig({
-            lendingPool: 0x524212eE2B50f9950767a58F2dAfFA5f3271017f,
+            lendingPool: 0x6B88EA6C6A9aad3a0E1119af1B098B9630a875CE,
             messageRelay: 0xa80ea62d1f5bBD985d20e18FA0bb46EE75A8a8d8,
             sourceOracle: 0xf7Bbf40145C82Fca13011C783AaeCa6bD95fd652,
-            priceOraclePlugin: 0xbfc17B4135a6DBf44Cb008ad2aAFB56a29E894D5,
             interesRateModel: 0x950474a968e62133423494b9Ee5A96b27843D4cA,
             weth: flareWeth,
             usdc: flareUsdc,

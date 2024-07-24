@@ -1,5 +1,6 @@
 {
   "name": "cc-lend",
+  "author": "Snojj25",
   "dependencies": {
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
     "dotenv": "^16.4.5",
