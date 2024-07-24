@@ -2,9 +2,6 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 import "./MainStorage.sol";
-
-import {PriceOraclePlugin} from "../PriceOraclePlugin.sol";
-
 import {IERC20} from "../Interfaces/IERC20.sol";
 import {InterestRateModel} from "../Interfaces/IIRM.sol";
 
@@ -19,10 +16,6 @@ abstract contract Configuration is MainStorage, OwnableUpgradeable {
 
     function setMessageRelay(address relay) public onlyOwner {
         s_messageRelay = relay;
-    }
-
-    function setPriceOraclePlugin(address _plugin) public onlyOwner {
-        priceOraclePlugin = _plugin;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -41,28 +34,41 @@ abstract contract Configuration is MainStorage, OwnableUpgradeable {
     }
 
     /// @notice Adds a new asset to the pool.
-    /// @param asset The underlying asset.
-    /// @param counterpart The address of the asset on the other chain.
-    /// @param lendFactor The lend factor for the asset.
-    /// @param borrowFactor The borrow factor for the asset.
-    function configureAsset(address asset, address counterpart, uint256 lendFactor, uint256 borrowFactor)
-        external
-        onlyOwner
-    {
+    /// @param _asset The underlying asset.
+    /// @param _counterpart The address of the asset on the other chain.
+    /// @param _lendFactor The lend factor for the asset.
+    /// @param _borrowFactor The borrow factor for the asset.
+    /// @param _ftsoIndex The ftso index used to get the price of the asset.
+    /// @param _isWeth If the asset is WETH.
+    function configureAsset(
+        address _asset,
+        address _counterpart,
+        uint256 _lendFactor,
+        uint256 _borrowFactor,
+        uint256 _ftsoIndex,
+        bool _isWeth
+    ) external onlyOwner {
         // Ensure that this asset has not been configured.
         require(
-            configurations[asset].borrowFactor == 0 && configurations[asset].lendFactor == 0, "ASSET_ALREADY_CONFIGURED"
+            configurations[_asset].borrowFactor == 0 && configurations[_asset].lendFactor == 0,
+            "ASSET_ALREADY_CONFIGURED"
         );
 
-        Configuration memory configuration = Configuration(lendFactor, borrowFactor);
+        Configuration memory configuration = Configuration(_lendFactor, _borrowFactor);
 
-        configurations[asset] = configuration;
-        baseUnits[asset] = 10 ** IERC20(asset).decimals();
+        configurations[_asset] = configuration;
+        baseUnits[_asset] = 10 ** IERC20(_asset).decimals();
 
-        fromAssetCounterpart[counterpart] = asset;
+        fromAssetCounterpart[_counterpart] = _asset;
+
+        s_assetFtsoIndex[_asset] = _ftsoIndex;
+
+        if (_isWeth) {
+            s_wethAddress = _asset;
+        }
 
         // Emit the event.
-        emit AssetConfigured(asset, configuration);
+        emit AssetConfigured(_asset, configuration);
     }
 
     /// @notice Updates the lend/borrow factors of an asset.

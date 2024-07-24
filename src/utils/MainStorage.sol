@@ -12,8 +12,6 @@ abstract contract MainStorage {
         _;
     }
 
-    address public priceOraclePlugin;
-
     /*///////////////////////////////////////////////////////////////
                           INTEREST RATE CONFIGURATION
     //////////////////////////////////////////////////////////////*/
@@ -30,6 +28,8 @@ abstract contract MainStorage {
                           ASSET CONFIGURATION
     //////////////////////////////////////////////////////////////*/
 
+    address s_wethAddress;
+
     /// @notice Maps underlying tokens to their configurations.
     mapping(address => Configuration) public configurations;
 
@@ -39,6 +39,9 @@ abstract contract MainStorage {
 
     /// @notice Maps counter assets from chainB to their address on chainA
     mapping(address => address) public fromAssetCounterpart;
+
+    /// @notice Maps asset to the ftso index on flare.
+    mapping(address => uint256) public s_assetFtsoIndex;
 
     /// @notice Emitted when a new asset is added to the pool.
     /// @param asset The underlying asset.
@@ -59,6 +62,18 @@ abstract contract MainStorage {
     /*///////////////////////////////////////////////////////////////
                        DEPOSIT/WITHDRAW INTERFACE
     //////////////////////////////////////////////////////////////*/
+
+    enum ActivityStatus {
+        NONE,
+        LENDING,
+        BORROWING
+    }
+
+    /// @notice Checks the users activity status.
+    /// @dev This is used to prevent users from depositing and borrowing at
+    /// the same time on the same contract(chain). We want to prevent users
+    /// from borrowing twice on ETH And Flare.
+    mapping(address => ActivityStatus) s_activityStatus;
 
     /// @notice Emitted after a sucessful deposit.
     /// @param from The address that triggered the deposit.
