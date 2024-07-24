@@ -5,13 +5,16 @@ import {Script} from "forge-std/Script.sol";
 
 import {MockPriceOracle} from "../test/mocks/MockPriceOracle.sol";
 import {MockInterestRateModel} from "../test/mocks/MockInterestRateModel.sol";
-import {PriceOraclePlugin} from "src/PriceOraclePlugin.sol";
+import {MockFtsoRegistry} from "../test/mocks/MockFtsoRegistry.sol";
 
 import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract DeployMockOracle is Script {
     function run() external returns (MockPriceOracle) {
-        vm.startBroadcast();
+        HelperConfig helperConfig = new HelperConfig();
+        (,,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
+
+        vm.startBroadcast(deployerKey);
         MockPriceOracle oracle = new MockPriceOracle();
         vm.stopBroadcast();
 
@@ -21,7 +24,10 @@ contract DeployMockOracle is Script {
 
 contract DeployMockIRM is Script {
     function run() external returns (MockInterestRateModel) {
-        vm.startBroadcast();
+        HelperConfig helperConfig = new HelperConfig();
+        (,,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
+
+        vm.startBroadcast(deployerKey);
         MockInterestRateModel irm = new MockInterestRateModel();
         vm.stopBroadcast();
 
@@ -29,17 +35,15 @@ contract DeployMockIRM is Script {
     }
 }
 
-contract DeployMockPOP is Script {
-    uint256 constant WETH_FTSO_IDX = 10;
-
-    function run() external returns (PriceOraclePlugin) {
+contract DeployMockFtsoRegistry is Script {
+    function run() external returns (MockFtsoRegistry) {
         HelperConfig helperConfig = new HelperConfig();
-        (,,,,, address wethAddress,,) = helperConfig.activeNetworkConfig();
+        (,,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
 
-        vm.startBroadcast();
-        PriceOraclePlugin pop = new PriceOraclePlugin(wethAddress, WETH_FTSO_IDX);
+        vm.startBroadcast(deployerKey);
+        MockFtsoRegistry oracle = new MockFtsoRegistry();
         vm.stopBroadcast();
 
-        return (pop);
+        return (oracle);
     }
 }

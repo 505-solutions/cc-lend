@@ -16,11 +16,11 @@ contract DeployPoolScript is Script {
         address owner = address(0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56);
 
         HelperConfig helperConfig = new HelperConfig();
-        (,,,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
+        (,,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(deployerKey);
         LendingPool pool = new LendingPool();
-        pool.initialize(owner, owner);
+        pool.initialize(owner, owner, false);
 
         vm.stopBroadcast();
 
@@ -33,7 +33,7 @@ contract DeployRelayScript is Script {
         address owner = address(0xaCEdF8742eDC7d923e1e6462852cCE136ee9Fb56);
 
         HelperConfig helperConfig = new HelperConfig();
-        (,,,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
+        (,,,,,, uint256 deployerKey) = helperConfig.activeNetworkConfig();
 
         vm.startBroadcast(deployerKey);
         MessageRelay relay = new MessageRelay(owner);
