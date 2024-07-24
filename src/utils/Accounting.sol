@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.7.0 <0.9.0;
 
-import {IPriceOraclePlugin} from "../Interfaces/IPriceOraclePlugin.sol";
-
 import {IERC20} from "../Interfaces/IERC20.sol";
 import {InterestRateModel} from "../Interfaces/IIRM.sol";
 
 import {Configuration} from "./Configuration.sol";
+import {InternalPriceOracle} from "./InternalPriceOracle.sol";
 
 import {SafeCastLib} from "solmate/utils/SafeCastLib.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-abstract contract Accounting is Configuration {
+abstract contract Accounting is Configuration, InternalPriceOracle {
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
 
@@ -162,7 +161,7 @@ abstract contract Accounting is Configuration {
             // Current user utilized asset.
             currentAsset = utilized[i];
 
-            uint256 assetPrice = IPriceOraclePlugin(priceOraclePlugin).getAssetPrice(currentAsset);
+            uint256 assetPrice = getAssetPrice(currentAsset);
 
             // Calculate the user's maximum borrowable value for this asset.
             // balanceOfUnderlying(asset,user) * ethPrice * collateralFactor.
@@ -217,7 +216,7 @@ abstract contract Accounting is Configuration {
             // Current user utilized asset.
             currentAsset = utilized[i];
 
-            uint256 assetPrice = IPriceOraclePlugin(priceOraclePlugin).getAssetPrice(currentAsset);
+            uint256 assetPrice = getAssetPrice(currentAsset);
 
             // Calculate the user's maximum borrowable value for this asset.
             // balanceOfUnderlying(asset,user) * ethPrice * lendFactor.

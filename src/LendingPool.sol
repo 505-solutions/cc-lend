@@ -16,23 +16,27 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-
-contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
+contract LendingPool is ReentrancyGuardUpgradeable, OwnableUpgradeable, UUPSUpgradeable, Accounting {
     using SafeTransferLib for IERC20;
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
-
-    // TODO: Make everything non-reentrant
 
     // constructor(address owner, address messageRelay) Owned(owner) {
     //     s_messageRelay = messageRelay;
     // }
 
-    function initialize(address initialOwner, address messageRelay) public initializer {
+    bool private s_allowDoubleBorrowing;
+
+    /// @param initialOwner The owner of the contract.
+    /// @param messageRelay The message relay contract.
+    /// @param _allowDoubleBorrowing Can be used for more sophisticated borrowing strategies. (!!Should default to false!!)
+    function initialize(address initialOwner, address messageRelay, bool _allowDoubleBorrowing) public initializer {
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
 
         s_messageRelay = messageRelay;
+
+        s_allowDoubleBorrowing = _allowDoubleBorrowing;
     }
 
     function _authorizeUpgrade(address) internal override onlyOwner {}
@@ -55,8 +59,17 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
     /// @param asset The underlying asset.
     /// @param amount The amount to be deposited.
     /// @param enable A boolean indicating whether to enable the underlying asset as collateral.
-    function deposit(address asset, uint256 amount, bool enable) external {
+    function deposit(address asset, uint256 amount, bool enable) external nonReentrant {
+        ActivityStatus status = s_activityStatus[msg.sender];
+        require(
+            status == ActivityStatus.NONE || status == ActivityStatus.LENDING || s_allowDoubleBorrowing,
+            "ATTEMPTED DOUBLE_BORROWING"
+        );
+
         _deposit(asset, amount, msg.sender, enable);
+
+        // This flag is used to prevent double borrowing on ETH and Flare.
+        s_activityStatus[msg.sender] = ActivityStatus.LENDING;
 
         // Transfer underlying in from the user.
         IERC20(asset).transferFrom(msg.sender, address(this), amount);
@@ -69,6 +82,7 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
     function handleCrossChainDeposit(address counterpartAsset, uint256 amount, address depositor, bool enable)
         external
         onlyMessageRelay
+        nonReentrant
     {
         address asset = fromAssetCounterpart[counterpartAsset];
 
@@ -101,12 +115,23 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
 
     // * WITDHRAWALS * //
 
+    /// @notice Any amount smaller than this can be considered as zero.
+    uint256 constant SHARES_BALANCE_DUST_AMOUT = 100;
+
     /// @notice Withdraw underlying tokens from the pool.
     /// @param asset The underlying asset.
     /// @param amount The amount to be withdrawn.
     /// @param disable A boolean indicating whether to disable the underlying asset as collateral.
-    function withdraw(address asset, uint256 amount, bool disable) external {
+    function withdraw(address asset, uint256 amount, bool disable) external nonReentrant {
+        ActivityStatus status = s_activityStatus[msg.sender];
+        require(status == ActivityStatus.LENDING || s_allowDoubleBorrowing, "ATTEMPTED DOUBLE_BORROWING");
+
         _withdraw(asset, amount, msg.sender, disable);
+
+        if (internalBalances[asset][msg.sender] < SHARES_BALANCE_DUST_AMOUT) {
+            // This flag is used to prevent double borrowing on ETH and Flare.
+            s_activityStatus[msg.sender] = ActivityStatus.NONE;
+        }
 
         // Transfer underlying to the user.
         IERC20(asset).transfer(msg.sender, amount);
@@ -119,6 +144,7 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
     function handleCrossChainWithdrawal(address counterpartAsset, uint256 amount, address depositor, bool disable)
         external
         onlyMessageRelay
+        nonReentrant
     {
         address asset = fromAssetCounterpart[counterpartAsset];
 
@@ -156,8 +182,17 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
     /// @notice Borrow underlying tokens from the pool.
     /// @param asset The underlying asset.
     /// @param amount The amount to borrow.
-    function borrow(address asset, uint256 amount) external {
+    function borrow(address asset, uint256 amount) external nonReentrant {
+        ActivityStatus status = s_activityStatus[msg.sender];
+        require(
+            status == ActivityStatus.NONE || status == ActivityStatus.BORROWING || s_allowDoubleBorrowing,
+            "ATTEMPTED DOUBLE_BORROWING"
+        );
+
         _borrow(asset, amount, msg.sender);
+
+        // This flag is used to prevent double borrowing on ETH and Flare.
+        s_activityStatus[msg.sender] = ActivityStatus.BORROWING;
 
         // Transfer tokens to the borrower.
         IERC20(asset).transfer(msg.sender, amount);
@@ -170,6 +205,7 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
     function handleCrossChainBorrow(address counterpartAsset, uint256 amount, address depositor)
         external
         onlyMessageRelay
+        nonReentrant
     {
         address asset = fromAssetCounterpart[counterpartAsset];
 
@@ -181,7 +217,7 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
         require(amount > 0, "AMOUNT_TOO_LOW");
 
         // Accrue interest.
-        // TODO: is this the right place to accrue interest?
+        // ?: is this the right place to accrue interest?
         accrueInterest(asset);
 
         // Enable the asset, if it is not already enabled.
@@ -210,11 +246,22 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
         cachedTotalBorrows[asset] += amount;
     }
 
+    /// @notice Any amount smaller than this can be considered as zero.
+    uint256 constant DEBT_DUST_AMOUT = 100;
+
     /// @notice Repay underlying tokens to the pool.
     /// @param asset The underlying asset.
     /// @param amount The amount to repay.
-    function repay(address asset, uint256 amount) external {
+    function repay(address asset, uint256 amount) external nonReentrant {
+        ActivityStatus status = s_activityStatus[msg.sender];
+        require(status == ActivityStatus.BORROWING || s_allowDoubleBorrowing, "ATTEMPTED DOUBLE_BORROWING");
+
         _repay(asset, amount, msg.sender);
+
+        if (internalDebt[asset][msg.sender] <= DEBT_DUST_AMOUT) {
+            // This flag is used to prevent double borrowing on ETH and Flare.
+            s_activityStatus[msg.sender] = ActivityStatus.NONE;
+        }
 
         // Transfer tokens from the user.
         IERC20(asset).transferFrom(msg.sender, address(this), amount);
@@ -227,6 +274,7 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
     function handleCrossChainRepay(address counterpartAsset, uint256 amount, address depositor)
         external
         onlyMessageRelay
+        nonReentrant
     {
         address asset = fromAssetCounterpart[counterpartAsset];
 
@@ -239,7 +287,6 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
 
         // Calculate the amount of internal debt units to be stored.
         uint256 debtUnits = amount.mulDivDown(baseUnits[asset], internalDebtExchangeRate(asset));
-
 
         // Update the internal borrow balance of the borrower.
         internalDebt[asset][depositor] -= debtUnits;
@@ -255,14 +302,12 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
         availableLiquidity[asset] += amount;
 
         // Accrue interest.
-        // TODO: is this the right place to accrue interest?
+        // ?: is this the right place to accrue interest?
         accrueInterest(asset);
 
         // Update the cached debt of the asset.
         cachedTotalBorrows[asset] -= amount;
     }
-
-    // TODO: Periodicaly check the liquidity available on both chains and update the availableLiquidity storage variable
 
     /*///////////////////////////////////////////////////////////////
                           LIQUIDATION INTERFACE
@@ -271,6 +316,7 @@ contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, Accounting {
     // TODO: Figure out and Test liquidatio Logic
     function liquidateUser(address borrowedAsset, address collateralAsset, address borrower, uint256 repayAmount)
         external
+        nonReentrant
     {
         require(userLiquidatable(borrower), "CANNOT_LIQUIDATE_HEALTHY_USER");
 

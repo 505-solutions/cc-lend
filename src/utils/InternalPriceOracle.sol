@@ -15,7 +15,7 @@ import "./MainStorage.sol";
 /// and convert it to the price of the asset denominated in ETH and scale it to 1e18 decimals.
 abstract contract InternalPriceOracle is MainStorage {
     /// @notice Address of the price oracle contract.
-    address public oracle;
+    address public oracleSource;
 
     /// @notice Emitted when the price oracle is changed.
     /// @param user The authorized user who triggered the change.
@@ -26,7 +26,7 @@ abstract contract InternalPriceOracle is MainStorage {
     /// @param newOracle The address of the new oracle.
     function setOracleSource(address newOracle) external {
         // Update the oracle.
-        oracle = newOracle;
+        oracleSource = newOracle;
 
         // Emit the event.
         emit OracleUpdated(msg.sender, newOracle);
@@ -34,7 +34,9 @@ abstract contract InternalPriceOracle is MainStorage {
 
     /// @notice Gets the price of an asset.
     /// @param asset The underlying asset.
-    function getAssetPrice(address asset) external view returns (uint256 assetPriceInEth) {
+    /// @return assetPriceInEth The price of the asset denominated in eth.
+    // TODO: SHould be marked as internal after testing
+    function getAssetPrice(address asset) public view returns (uint256 assetPriceInEth) {
         uint256 ftsoIndex = s_assetFtsoIndex[asset];
 
         uint256 ethFtsoIndex = s_assetFtsoIndex[s_wethAddress];
@@ -42,7 +44,7 @@ abstract contract InternalPriceOracle is MainStorage {
             return 1e18;
         } else {
             (uint256 ethPrice,, uint256 ethAssetPriceUsdDecimals) =
-                IFtsoRegistry(oracle).getCurrentPriceWithDecimals(ethFtsoIndex);
+                IFtsoRegistry(oracleSource).getCurrentPriceWithDecimals(ethFtsoIndex);
 
             if (ftsoIndex == 0) {
                 // ! Stablecoin
@@ -52,7 +54,7 @@ abstract contract InternalPriceOracle is MainStorage {
                 // ! Other assets
 
                 (uint256 price,, uint256 assetPriceUsdDecimals) =
-                    IFtsoRegistry(oracle).getCurrentPriceWithDecimals(ftsoIndex);
+                    IFtsoRegistry(oracleSource).getCurrentPriceWithDecimals(ftsoIndex);
 
                 // Price in eth = (asset_P /  eth_P) * 1e18
                 assetPriceInEth =

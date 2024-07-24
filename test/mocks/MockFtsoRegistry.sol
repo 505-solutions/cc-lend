@@ -22,7 +22,3 @@ contract MockFtsoRegistry {
     }
 }
 
-// function getCurrentPriceWithDecimals(uint256 _assetIndex)
-//         external
-//         view
-//         returns (uint256 _price, uint256 _timestamp, uint256 _assetPriceUsdDecimals);

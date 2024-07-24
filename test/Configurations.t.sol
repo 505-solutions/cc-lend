@@ -13,7 +13,6 @@ import {LendingPool} from "src/LendingPool.sol";
 import {PriceOracle} from "src/Interfaces/IPriceOracle.sol";
 import {InterestRateModel} from "src/Interfaces/IIRM.sol";
 
-import {PriceOraclePlugin} from "src/PriceOraclePlugin.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 import {MockPriceOracle} from "./mocks/MockPriceOracle.sol";
 import {MockFtsoRegistry} from "./mocks/MockFtsoRegistry.sol";
@@ -35,14 +34,12 @@ contract ConfigurationTest is Test {
     MockERC20 asset;
     MockERC20 borrowAsset;
 
-    MockPriceOracle oracle;
     MockFtsoRegistry ftsoRegistry;
     MockInterestRateModel interestRateModel;
     // MockLiquidator liquidator;
 
-    PriceOraclePlugin priceOraclePlugin;
-
-    uint256 constant ETH_FTSO_IDX = 1e18;
+    uint256 constant ETH_FTSO_IDX = 10;
+    uint256 constant USDC_FTSO_IDX = 0;
 
     function setUp() public {
         // ! For non upgradable contracts
@@ -50,42 +47,23 @@ contract ConfigurationTest is Test {
 
         // ! For upgradable contracts
         pool = new LendingPool();
-        pool.initialize(address(this), address(this));
+        pool.initialize(address(this), address(this), true);
 
         interestRateModel = new MockInterestRateModel();
 
-        asset = new MockERC20("Mock Token", "MKT", 18);
-
-        pool.configureAsset(address(asset), address(asset), 0.5e18, 0);
+        asset = new MockERC20("Mock ETH", "MKE", 18);
+        pool.configureAsset(address(asset), address(asset), 0.5e18, 0, ETH_FTSO_IDX, true);
         pool.setInterestRateModel(address(asset), address(interestRateModel));
 
-        borrowAsset = new MockERC20("Mock Token", "MKT", 18);
-
-        pool.configureAsset(address(borrowAsset), address(borrowAsset), 0, 1e18);
+        borrowAsset = new MockERC20("Mock USDC", "MKU", 18);
+        pool.configureAsset(address(borrowAsset), address(borrowAsset), 0, 1e18, USDC_FTSO_IDX, false);
         pool.setInterestRateModel(address(borrowAsset), address(interestRateModel));
 
         // * ORACLE CONFIGURATIONS
-        priceOraclePlugin = new PriceOraclePlugin(address(asset), ETH_FTSO_IDX);
-        priceOraclePlugin.setOracleSource(address(this));
+        ftsoRegistry = new MockFtsoRegistry();
+        ftsoRegistry.updatePrice(ETH_FTSO_IDX, 3000e5, 5);
 
-        pool.setPriceOraclePlugin(address(priceOraclePlugin));
-
-        if (block.chainid != 16) {
-            // ! If on Sepolia
-            oracle = new MockPriceOracle();
-            oracle.updatePrice(address(asset), 1e18);
-            priceOraclePlugin.setOracleSource(address(oracle));
-        } else {
-            // ! If on Flare
-            priceOraclePlugin.setFtsoIndex(address(asset), ETH_FTSO_IDX);
-
-            ftsoRegistry = new MockFtsoRegistry();
-            ftsoRegistry.updatePrice(ETH_FTSO_IDX, 3000e5, 5);
-
-            priceOraclePlugin.setOracleSource(address(ftsoRegistry));
-        }
-
-        // liquidator = new MockLiquidator(pool, PriceOracle(address(oracle)));
+        pool.setOracleSource(address(ftsoRegistry));
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -93,7 +71,7 @@ contract ConfigurationTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function testOracleConfiguration() public view {
-        assertEq(address(pool.priceOraclePlugin()), address(priceOraclePlugin));
+        assertEq(address(pool.oracleSource()), address(ftsoRegistry));
     }
 
     // function testNewOracleConfiguration() public {
