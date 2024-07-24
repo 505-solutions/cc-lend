@@ -66,7 +66,7 @@ setAttestTransaction(tx.hash);
 
 We record the transaction hash to relay the transaction to Flare.
 
-### Relaying the transaction with collateral from Ethereum to Flare
+### <a id="relayingTx"></a> Relaying the transaction with collateral from Ethereum to Flare
 
 Firstly we have to create attestation request. We use one of the State connector verifiers. We achieve this with an API call to `{{VERIFIER_URL}}/verifier/eth/EVMTransaction/prepareRequest` with parameters:
 
@@ -191,7 +191,7 @@ If everything goes as expected, the attestation provider response JSON should co
 
 ### Relaying Messages Using the Flare State Connector
 
-When an action occurs on a source network, we need to relay this information to the destination network to maintain the shared state and take appropriate actions based on this data. In our example, this means a user can lock up collateral on Ethereum and borrow funds against this collateral on Flare. Using the information described in the previous step (link above), we can obtain an attestation proof for this transaction from the state connector. This proof updates the state of the system on Flare, proving the collateral is locked on Ethereum. To relay this proof, we use the `MessageRelay.sol` contract, which verifies the proof, decodes and parses the information, and then updates the system's state.
+When an action occurs on a source network, we need to relay this information to the destination network to maintain the shared state and take appropriate actions based on this data. In our example, this means a user can lock up collateral on Ethereum and borrow funds against this collateral on Flare. Using the information described in the [previous step](#relayingTx) , we can obtain an attestation proof for this transaction from the state connector. This proof updates the state of the system on Flare, proving the collateral is locked on Ethereum. To relay this proof, we use the `MessageRelay.sol` contract, which verifies the proof, decodes and parses the information, and then updates the system's state.
 
 Now, let's examine the code to understand how this works. Anyone can obtain the proof from the `State Connector` and call the `verifyCrossChainAction` function on our `MessageRelay` contract. This function first ensures the proof has not been previously verified to prevent exploits. We then call Flare's `evmTxVerifier` to verify the inclusion of our transaction in the Merkle state root. Once the proof is validated, we extract the events of that transaction stored in `_proof.data.responseBody.events`.
 
