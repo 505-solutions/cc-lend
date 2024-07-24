@@ -16,7 +16,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
-contract LendingPool is ReentrancyGuardUpgradeable, OwnableUpgradeable, UUPSUpgradeable, Accounting {
+contract LendingPool is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuardUpgradeable, Accounting {
     using SafeTransferLib for IERC20;
     using SafeCastLib for uint256;
     using FixedPointMathLib for uint256;
