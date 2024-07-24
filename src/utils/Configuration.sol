@@ -45,10 +45,16 @@ abstract contract Configuration is MainStorage, OwnableUpgradeable {
     /// @param counterpart The address of the asset on the other chain.
     /// @param lendFactor The lend factor for the asset.
     /// @param borrowFactor The borrow factor for the asset.
-    function configureAsset(address asset, address counterpart, uint256 lendFactor, uint256 borrowFactor)
-        external
-        onlyOwner
-    {
+    /// @param ftsoIndex The ftso index used to get the price of the asset.
+    /// @param isWeth If the asset is WETH.
+    function configureAsset(
+        address asset,
+        address counterpart,
+        uint256 lendFactor,
+        uint256 borrowFactor,
+        uint256 ftsoIndex,
+        address isWeth
+    ) external onlyOwner {
         // Ensure that this asset has not been configured.
         require(
             configurations[asset].borrowFactor == 0 && configurations[asset].lendFactor == 0, "ASSET_ALREADY_CONFIGURED"
@@ -60,6 +66,12 @@ abstract contract Configuration is MainStorage, OwnableUpgradeable {
         baseUnits[asset] = 10 ** IERC20(asset).decimals();
 
         fromAssetCounterpart[counterpart] = asset;
+
+        s_assetFtsoIndex[asset] = _ftsoIndex;
+
+        if (isWeth) {
+            s_wethAddress = asset;
+        }
 
         // Emit the event.
         emit AssetConfigured(asset, configuration);
