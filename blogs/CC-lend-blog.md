@@ -2,7 +2,7 @@
 
 ### Introduction
 
-The rapid expansion of decentralized finance (DeFi) has underscored the need for interoperability among diverse blockchain networks. Cross-chain lending protocols, which enable seamless asset lending and borrowing across different blockchains, are at the forefront of this innovation. Flare Network, with its robust State Connector protocol and Time Series Oracle, provides a powerful solution for implementing these cross-chain lending mechanisms. By leveraging Flare's State Connector and Time Series Oracle, developers can create secure and efficient lending protocols that bridge assets from multiple chains, enhancing liquidity and user accessibility in the DeFi ecosystem. In this blog, we will delve into the step-by-step process of implementing a cross-chain lending protocol using Flare's State Connector and Time Series Oracle, highlighting its advantages and practical applications.
+The rapid expansion of decentralized finance (DeFi) has underscored the need for interoperability among diverse blockchain networks. Cross-chain lending protocols, which enable seamless asset lending and borrowing across different blockchains, are at the forefront of this innovation. Flare Network, with its robust State Connector protocol and Flare Time Series Oracle, provides a powerful solution for implementing these cross-chain lending mechanisms. By leveraging Flare's State Connector and Time Series Oracle, we can create secure and efficient lending protocols that bridge assets from multiple chains, enhancing liquidity and user accessibility in the DeFi ecosystem. In this blog, we will delve into the step-by-step process of implementing a cross-chain lending protocol using Flare's State Connector and Time Series Oracle, highlighting its advantages and practical applications.
 
 ### About Flare
 
@@ -10,13 +10,13 @@ Flare is Layer 1 EVM-based blockchain for developers to build on. Flare, being a
 
 ### What is State Connector?
 
-The cross-chain lending solution presented in this demo is built on top of State Connector. This protocol leverages the State Connector's ability to query data from other blockchains outside of Flare, enabling seamless asset transfers and lending operations across multiple chains. The process is decentralized, secure, and cost-effective, with independent attestation providers transferring information from other blockchains to Flare. When the State Connector smart contract confirms the required consensus among the provided information, the data is successfully transferred, facilitating the lending transaction. Flare's State Connector eliminates the need for all participants to operate on the same blockchain, removing utility barriers and streamlining the process. This innovation provides a competitive advantage for dApps and other financial products built on Flare by enhancing interoperability and efficiency in the DeFi ecosystem.
+The cross-chain lending solution presented in this demo is built on top of State Connector. The application leverages the State Connector's ability to query data from other blockchains outside of Flare, enabling seamless asset transfers and lending operations across multiple chains. The process is decentralized, secure, and cost-effective, with independent attestation providers transferring information from other blockchains to Flare. When the State Connector smart contract confirms the required consensus among the provided information, the data is successfully transferred, facilitating the lending transaction. Flare's State Connector eliminates the need for all participants to operate on the same blockchain, removing utility barriers and streamlining the process. This innovation provides a competitive advantage for dApps and other financial products built on Flare by enhancing interoperability and efficiency in the DeFi ecosystem.
 
 You can learn more about the State Connector system [here](https://docs.flare.network/tech/state-connector/).
 
 ### What is Flare time series oracle (FTSO)
 
-The cross-chain lending solution presented in this demo also leverages the Flare Time Series Oracle (FTSO). FTSO provides decentralized, real-time data feeds from external sources, which are crucial for determining accurate and up-to-date asset prices. This process is secure, reliable, and cost-effective, utilizing independent data providers to gather and validate information. When the FTSO smart contract confirms the provided data, it ensures the integrity and accuracy of the information used in lending transactions. By integrating FTSO, Flare eliminates the need for centralized oracles, reducing risk and enhancing the reliability of cross-chain operations. This capability offers a competitive edge to dApps and financial products built on Flare, as it ensures real-time, accurate data for seamless lending activities.
+The cross-chain lending solution presented in this demo also leverages the Flare Time Series Oracle (FTSO). FTSO provides decentralized, real-time data feeds from external sources, which are crucial for determining accurate and up-to-date asset prices. This process is secure, reliable, and cost-effective, utilizing independent data providers to gather and validate information. When the FTSO smart contract provides price feed data, it ensures the integrity and accuracy of the information used in lending transactions. By integrating FTSO, Flare eliminates the need for centralized oracles, reducing risk and enhancing the reliability of price data. This capability offers a competitive edge to dApps and financial products built on Flare, as it ensures real-time, accurate data for seamless lending activities.
 
 You can learn more about the Flare Time Series Oracle [here](https://flare.network/ftso/).
 
@@ -24,13 +24,12 @@ You can learn more about the Flare Time Series Oracle [here](https://flare.netwo
 
 We are using [Nextjs](https://nextjs.org/) and [React](https://react.dev/) with [Typescript](https://www.typescriptlang.org/) for frontend, [MantineUI](https://mantine.dev/) for UI components and [Foundry](https://book.getfoundry.sh/) for Solidity development environment.
 
-The entire code for the application is available on the [**main github repo**](https://git.aflabs.org/flare-external/flare-demos-general), all smart contracts are available on the [**smart contract github repo**](https://github.com/505-solutions/identity-link-contracts/tree/luka-develop).
+The entire code for the application is available on the [**main github repo**](https://git.aflabs.org/flare-external/flare-demos-general), all smart contracts are available on the [**smart contract github repo**](https://github.com/505-solutions/cc-lend).
 
 To bootstrap your Flare development journey you can use [Flare Hardhat starter](https://github.com/flare-foundation/flare-hardhat-starter) for Hardhat or [Flare Foundry starter](https://github.com/flare-foundation/flare-foundry-starter). For the purpose of this demo we will use Foundry.
 
 The initial steps are straightforward. We set up the folder structure, initial components and install all the necessary packages. Wallet connection is handled by [WalletConnect](https://walletconnect.com/) and we use [typechain-ethers](https://www.npmjs.com/search?q=typechain-ethers) package for type-safe interactions with smart contracts. Communication with the State Connector verifiers and attestation clients is achieved through [OpenAPI](https://swagger.io/specification/) specification and we use [swagger-typescript-api](https://www.npmjs.com/package/swagger-typescript-api) package to appropriate type-signatures for the client.
 
-TODO: Manjka: Smart contracts
 
 ### Lending
 
@@ -48,7 +47,7 @@ The lending process can be broken down in steps:
 
 Since most of modern DeFi systems work with ERC20 tokens we deploy 4 different mock ERC20 tokens on both Ethereum testnet Sepolia and Flare testnet Coston for test wrapped ETH (TWETH) and test USDC (TUSDC). We display balances of **sepoliaTWETH**, **sepoliaTUSDC**, **costonTWETH**, **costonTUSDC** on the frontend using `balanceOf` ERC20 function. Since all the tokens are mock tokens we allow user to mint them infinitely.
 
-To provide collateral we ensure that we select Sepolia in the network tab and call `LendingPool.deposit` function.
+To provide collateral we ensure that we have selected Sepolia in the network tab and call `LendingPool.deposit` function.
 
 ```typescript
 const tx: ethers.ContractTransaction = await depositCollateral(
@@ -87,7 +86,7 @@ Firstly we have to create attestation request. We use one of the State connector
 }
 ```
 
-The response we get contains `abiEncodedRequest` — binary request for attestation. The encoded request contains data about the required transaction together with a message integrity check, that forces the attestation clients to really check the
+The response we get contains `abiEncodedRequest` — binary request for attestation. The encoded request contains data about the required transaction together with a message integrity check, that forces the attestation clients check the correctness of the transaction information.
 
 ```json
 {
@@ -96,13 +95,13 @@ The response we get contains `abiEncodedRequest` — binary request for atte
 }
 ```
 
-We use `abiEncodedRequest` from earlier to request attestation on Coston [**State Connector contract**](https://coston-explorer.flare.network/address/0x0c13aDA1C7143Cf0a0795FFaB93eEBb6FAD6e4e3) by calling `requestAttestations(abiEncodedRequest)`. This will let the entire set of attestation providers know, that you wish to have proof that the transaction with the attached payment reference has happened.
+We use `abiEncodedRequest` from earlier to request attestation on Coston [**State Connector contract**](https://coston-explorer.flare.network/address/0x0c13aDA1C7143Cf0a0795FFaB93eEBb6FAD6e4e3) by calling `requestAttestations(abiEncodedRequest)`. This will let the entire set of attestation providers know, that we wish to have a proof that the transaction with all attached data such as hash, transmitted events, block id etc. has happened on Ethereum.
 
 In the State Connector requests and answers are submitted sequentially in attestation rounds. Each attestation round has 4 consecutive phases called Collect, Choose, Commit and Reveal. You can learn more about Flare’s CCCR (Collect, Choose, Commit, Reveal) protocol [here](https://docs.flare.network/tech/state-connector/). Once we request attestation our request is part of a specific round numbered with `roundId`. RoundId is calculated based on the timestamp of the block in which attestation request contract call is made.
 
 Next, you have to wait 6 minutes during which the attestation providers verify the validity of the transaction on their own nodes and vote on which transactions are valid (consensus). If our transaction is marked as valid by votes it is included in the Merkle tree for that round. When the round has been finalized, Merkle root for that round gets submitted and stored in State Connector smart contract.
 
-After the round in which we requested attestation has been finalised we are ready to retrieve our Merkle proof that we will use to prove the validity of our XRP transaction. Each attestation provider holds a copy of the entire merkle tree for the round and is thus able to produce merkle proof for each specific transaction. We retrieve the Merkle proof by calling `/attestation-client/api/proof/get-specific-proof` with the calldata from before:
+After the round in which we requested attestation has been finalised we are ready to retrieve our Merkle proof that we will use to prove the validity of our ETH transaction. Each attestation provider holds a copy of the entire merkle tree for the round and is thus able to produce Merkle proof for each specific transaction. We retrieve the Merkle proof by calling `/attestation-client/api/proof/get-specific-proof` with the calldata from before:
 
 ```json
 {
@@ -187,7 +186,7 @@ If everything goes as expected, the attestation provider response JSON should co
 }
 ```
 
-### Receiving USDC loan from Flare smart contract
+### Receiving USDC loan from smart contract on Flare
 
 ### Relaying Messages Using the Flare State Connector
 
@@ -250,3 +249,48 @@ There are four events we care about: `Deposit`, `Withdrawal`, `Borrow`, and `Rep
         }
     }
 ```
+
+### Using FTSO to calculate price conversion
+
+We allow users to borrow 90% of the locked collateral value. We use FTSO to get up-to-date price of ETH in USD so that our smart contract can provide sufficient amount of USDC. To get the price of an asset in the current timeframe we call `getCurrentPriceWithDecimals` on FTSO smart contract.
+
+```js
+function getAssetPrice(address asset) public view returns (uint256 assetPriceInEth) {
+        uint256 ftsoIndex = s_assetFtsoIndex[asset];
+
+        uint256 ethFtsoIndex = s_assetFtsoIndex[s_wethAddress];
+        if (ftsoIndex == ethFtsoIndex) {
+            return 1e18;
+        } else {
+            (uint256 ethPrice,, uint256 ethAssetPriceUsdDecimals) =
+                IFtsoRegistry(oracleSource).getCurrentPriceWithDecimals(ethFtsoIndex);
+
+            if (ftsoIndex == 0) {
+                // ! Stablecoin
+
+                assetPriceInEth = (1e18 * 10 ** ethAssetPriceUsdDecimals) / (ethPrice);
+            } else {
+                // ! Other assets
+
+                (uint256 price,, uint256 assetPriceUsdDecimals) =
+                    IFtsoRegistry(oracleSource).getCurrentPriceWithDecimals(ftsoIndex);
+
+                // Price in eth = (asset_P /  eth_P) * 1e18
+                assetPriceInEth =
+                    (price * 1e18 * 10 ** ethAssetPriceUsdDecimals) / (ethPrice * 10 ** assetPriceUsdDecimals);
+            }
+        }
+    }
+  ```
+
+### Repaying the loan on Flare
+
+Once we are ready to repay the loan we call `repay` function on the Flare smart contract. The contract than records that the loan has been repayed and allows us to release collateral on Ethereum.
+
+### Unlocking collateral on Ethereum
+
+TODO: relaying transactions from Flare to ETH not yet supported
+
+### Conclusion
+
+In this blog, we implemented a cross-chain lending protocol utilizing Flare Network's State Connector and Flare Time Series Oracle (FTSO). The integration of these components allowed us to create a decentralized, secure, and efficient lending mechanism that bridges assets across different blockchains. By leveraging the State Connector, we enabled the transfer and validation of data between Ethereum and Flare, facilitating seamless collateralization and lending processes. The FTSO provided real-time, decentralized price data, ensuring accurate asset valuations within our protocol. Through the step-by-step guide, we explored the architecture, collateral provision, transaction relaying, and message verification processes essential for cross-chain lending. Ultimately, this approach enhances the interoperability and liquidity in the DeFi ecosystem, showcasing Flare's capability to power next-generation decentralized applications.
